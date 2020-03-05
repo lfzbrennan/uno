@@ -18,6 +18,11 @@ int main(int argc, char** argv) {
     n1.numerator = 23434;
     n1.denominator = 9990;
 
+    rational_number n2;
+    n1.type = positive;
+    n1.numerator = 23434;
+    n1.denominator = 9990;
+
     cout << rational_repr_fraction(n1) << endl;
 
     rational_simplify(n1);
