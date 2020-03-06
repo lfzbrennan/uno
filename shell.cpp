@@ -36,7 +36,7 @@ vector<string> comma_split(string l) {
 
 int main(int argc, char** argv) {
 
-    printf("WELCOME\n");
+    system("cat ./banner.d");
 
     string line;
     vector<string> tokens;
