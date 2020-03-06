@@ -3,29 +3,53 @@
 #include "lib/number.hpp"
 #include "lib/rational_repr.cpp"
 #include "lib/rational_misc.cpp"
+#include "lib/rational_operations.cpp"
+
+#include "parse/god_parse.cpp"
+
+#include "config.hpp"
 
 #include <iostream>
 #include <vector>
 
+#include <stdio.h>
+
 typedef std::vector<rational_number> rational_vec;
+
+/*
+char* commands[] = {
+    "clear",
+};
+*/
 
 using namespace std;
 
+vector<string> comma_split(string l) {
+   vector<string> tokens;
+   string token;
+   istringstream tokenStream(l);
+   while (std::getline(tokenStream, token, ',')) {
+      tokens.push_back(token);
+   }
+   return tokens;
+}
+
 int main(int argc, char** argv) {
 
-    rational_number n1;
-    n1.type = positive;
-    n1.numerator = 23434;
-    n1.denominator = 9990;
+    printf("WELCOME\n");
 
-    rational_number n2;
-    n1.type = positive;
-    n1.numerator = 23434;
-    n1.denominator = 9990;
+    string line;
+    vector<string> tokens;
 
-    cout << rational_repr_fraction(n1) << endl;
+    while(true) {
 
-    rational_simplify(n1);
+        cout << INTERP_TEXT;
+        getline(cin, line);
+        tokens = comma_split(line);
 
-    cout << rational_repr_fraction(n1) << endl;
+        for (vector<string>::iterator it = tokens.begin(); it < tokens.end(); ++it) {
+            controller(*it);
+        }
+
+    }
 }

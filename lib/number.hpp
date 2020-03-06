@@ -9,6 +9,7 @@
 enum rational_types {zero, negative, positive, undefined};
 
 typedef struct {
+    std::string name;
     rational_types type; // 0 = 0, 1 = negative, 2 = positive, 3 = inf
     boost::multiprecision::uint128_t numerator;
     boost::multiprecision::uint128_t denominator;
