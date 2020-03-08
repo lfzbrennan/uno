@@ -1,6 +1,5 @@
 #include "number.hpp"
-
-#include <boost/multiprecision/cpp_dec_float.hpp>
+#include "rational_repr.hpp"
 
 using boost::multiprecision::cpp_dec_float_100;
 using boost::lexical_cast;

@@ -1,7 +1,7 @@
 #include "number.hpp"
 #include "rational_misc.hpp"
+#include "rational_operations.hpp"
 
-#include <iostream>
 using namespace std;
 
 using boost::multiprecision::uint128_t;
@@ -40,7 +40,7 @@ rational_number rational_multiply(rational_number r1, rational_number r2) {
 
 rational_number rational_divide(rational_number r1, rational_number r2) {
     uint128_t temp = r2.numerator;
-    r2.numerator = r1.denominator;
+    r2.numerator = r2.denominator;
     r2.denominator = temp;
 
     return rational_multiply(r1, r2);

@@ -2,9 +2,13 @@
 #define NUMBER_DOT_HPP
 
 #include <iostream>
+#include <numeric>
 
 #include <boost/multiprecision/cpp_int.hpp>
 #include <boost/lexical_cast.hpp>
+
+#include <boost/multiprecision/cpp_int.hpp>
+#include <boost/integer/common_factor.hpp>
 
 enum rational_types {zero, negative, positive, undefined};
 
