@@ -21,6 +21,10 @@ rational_number output;
 const string special_num  = "~.";
 const string operators = "/-+*";
 
+int paren_count;
+string number;
+char top;
+
 struct precedence {
     static map<char,int> create_map() {
           map<char,int> m;
@@ -101,6 +105,30 @@ rational_number dec_to_rat(string& num) {
     return out;
 }
 
+void process() {
+    top = operator_stack.top(); operator_stack.pop();
+    if (operand_stack.size() < 2) {
+        err = bad_expression_formulation;
+        offending_char = top;
+        return;
+    }
+    rational_number r2 = operand_stack.top(); operand_stack.pop();
+    rational_number r1 = operand_stack.top(); operand_stack.pop();
+
+    operand_stack.push(operation(r1, r2, top));
+}
+
+void process_operator(char front) {
+    if (operator_stack.size() == 0) {
+        operator_stack.push(front);
+    }
+    else if (precedence::precedence_map[operator_stack.top()] < precedence::precedence_map[front]) {
+        operator_stack.push(front);
+    } else {
+        process();
+    }
+}
+
 rational_number parse_number(string& num) {
     rational_types t = positive;
     if (num[0] == '-') {
@@ -135,118 +163,77 @@ void infix_parse(string& line) {
     operand_stack = stack<rational_number>();
     operator_stack = stack<char>();
 
-    string number;
-    char top = ' ';
+    top = ' ';
+
+    paren_count = 0;
+
     for (string::const_iterator it = line.cbegin(); it != line.cend(); ++it) {
-        cout << *it << endl;
         number = "";
+        // if char is '('
         if (*it == '(') {
+            paren_count++;
             operator_stack.push(*it);
-        } else if (isdigit(*it)) {
+        }
+
+        // if char is a digit
+        else if (isdigit(*it)) {
             // keeps parsing until number is complete
             number += *it;
-            while (true) {
-                if (isdigit(*(it+1)) || (special_num.find(*(it+1)) != string::npos)) {
-                    it++;
-                    number += *it;
-                } else break;
+            while (isdigit(*(it+1)) || (special_num.find(*(it+1)) != string::npos)) {
+                it++;
+                number += *it;
             }
-
             operand_stack.push(parse_number(number));
-        } else if (operators.find(*it) != string::npos) {
+        }
+
+        // if char is an operator
+        else if (operators.find(*it) != string::npos) {
+            // if char is a '-'
             if (*it == '-') {
-                if (!isdigit(*(it-1)) && isdigit(*(it+1))) {
+                if (it == line.cbegin() || operators.find(*(it-1)) != string::npos)  {
+                    cout << "found a number!" << endl;
                     number += *it;
-                    while (true) {
-                        if (isdigit(*(it+1)) || (special_num.find(*(it+1)) != string::npos)) {
-                            it++;
-                            number += *it;
-                        }
+                    while (isdigit(*(it+1)) || (special_num.find(*(it+1)) != string::npos)) {
+                        it++;
+                        number += *it;
                     }
                     operand_stack.push(parse_number(number));
                 }
-                else {
-                    while (true) {
-                        if (operator_stack.size() == 0) {
-                            operator_stack.push(*it);
-                            break;
-                        }
-                        if (!(precedence::precedence_map[operator_stack.top()] < precedence::precedence_map[*it])) {
-                            top = operator_stack.top(); operator_stack.pop();
-                            // check if there are at least 2 item in operand_stack, else throw bad_expression_formulation error
-                            if (operand_stack.size() < 2) {
-                                err = bad_expression_formulation;
-                                offending_char = top;
-                                return;
-                            }
-                            rational_number r2 = operand_stack.top(); operand_stack.pop();
-                            rational_number r1 = operand_stack.top(); operand_stack.pop();
-
-                            operand_stack.push(operation(r1, r2, top));
-                        } else break;
-                    }
-                }
-            } else {
-                while (true) {
-                    if (operator_stack.size() == 0) {
-                        operator_stack.push(*it);
-                        break;
-                    }
-                    if (!(precedence::precedence_map[operator_stack.top()] < precedence::precedence_map[*it])) {
-                        top = operator_stack.top(); operator_stack.pop();
-                        if (operand_stack.size() < 2) {
-                            cout << "getting here" << endl;
-                            err = bad_expression_formulation;
-                            offending_char = top;
-                            return;
-                        }
-                        rational_number r2 = operand_stack.top(); operand_stack.pop();
-                        rational_number r1 = operand_stack.top(); operand_stack.pop();
-
-                        operand_stack.push(operation(r1, r2, top));
-                    } else break;
-                }
+                else process_operator(*it);
             }
-        } else if (*it == ')') {
-            while (operator_stack.top() != '(') {
-                top = operator_stack.top(); operator_stack.pop();
-                if (operand_stack.size() < 2) {
-                    err = bad_expression_formulation;
-                    offending_char = top;
-                    return;
-                }
-                rational_number r2 = operand_stack.top(); operand_stack.pop();
-                rational_number r1 = operand_stack.top(); operand_stack.pop();
+            // if char is not a '-'
+            else process_operator(*it);
+        }
 
-                operand_stack.push(operation(r1, r2, top));
+        // if char is a ')'
+        else if (*it == ')') {
+            while (operator_stack.top() != '(') {
+                process();
             }
             operator_stack.pop();
-        } else {
-            cout << "getting here" << endl;
+        }
+
+        // if it is anythig else, throw an error
+        else {
             offending_char = *it;
             err = bad_expression_character;
             return;
         }
     }
 
+    // continue looping through operand stack
     while (operator_stack.size() > 0) {
-        top = operator_stack.top(); operator_stack.pop();
-        if (operand_stack.size() < 2) {
-            err = bad_expression_formulation;
-            offending_char = top;
-            return;
-        }
-        rational_number r2 = operand_stack.top(); operand_stack.pop();
-        rational_number r1 = operand_stack.top(); operand_stack.pop();
-
-        operand_stack.push(operation(r1, r2, top));
+        process();
     }
 
+    // make sure only one operand is left
     if (operand_stack.size() != 1) {
         err = bad_expression_formulation;
         offending_char = top;
         return;
     }
+
+    // set output and leave
 
     output = operand_stack.top();
 
