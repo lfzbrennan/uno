@@ -19,4 +19,10 @@ typedef struct {
     boost::multiprecision::uint128_t denominator;
 } rational_number;
 
+typedef struct {
+    std::string name;
+    std::vector<std::string> parameters;
+    std::string expression;
+} lambda;
+
 #endif

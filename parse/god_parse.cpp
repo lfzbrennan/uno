@@ -26,12 +26,18 @@ enum errors {
     nil,
     bad_expression_character,
     bad_expression_formulation,
-    undfined_variable
+    undfined_variable,
+    no_lambda_parameters,
+    poor_variable_name,
+    poor_parameter_name,
+    unused_parameter
 };
 
 errors err;
 char offending_char;
 string offending_string;
+
+vector<rational_number> lambda_temp;
 
 struct precedence {
     static map<char,int> create_map() {
@@ -61,6 +67,19 @@ void error_message() {
             break;
         case undfined_variable:
             cout << "undefined variable " << offending_string << endl;
+            break;
+        case no_lambda_parameters:
+            cout << "lambda must have at least one parameter" << endl;
+            break;
+        case poor_variable_name:
+            cout << "poor variable name " << offending_string << endl;
+            break;
+        case poor_parameter_name:
+            cout << "poor parameter name " << offending_string << endl;
+            break;
+        case unused_parameter:
+            cout << "unused_parameter " << offending_string << endl;
+            break;
         default:
             cout << "Something went wrong" << endl;
     }
@@ -140,14 +159,10 @@ void process() {
 
 // processes operator from stack
 void process_operator(char front) {
-    if (operator_stack.size() == 0) {
-        operator_stack.push(front);
-    }
-    else if (precedence::precedence_map[operator_stack.top()] < precedence::precedence_map[front]) {
-        operator_stack.push(front);
-    } else {
+    while (!operator_stack.empty() && precedence::precedence_map[operator_stack.top()] >= precedence::precedence_map[front])
         process();
-    }
+    operator_stack.push(front);
+
 }
 
 // parses number
@@ -194,8 +209,10 @@ void infix_parse(string& line, vector<rational_number>& rat_vec) {
 
     for (string::const_iterator it = line.cbegin(); it != line.cend(); ++it) {
         number = "";
+
+        if (*it == ' ') continue;
         // if char is '('
-        if (*it == '(') {
+        else if (*it == '(') {
             operator_stack.push(*it);
         }
 
@@ -234,12 +251,35 @@ void infix_parse(string& line, vector<rational_number>& rat_vec) {
             // if char is a '-'
             if (*it == '-') {
                 if (it == line.cbegin() || operators.find(*(it-1)) != string::npos)  {
-                    number += *it;
-                    while (isdigit(*(it+1)) || (special_num.find(*(it+1)) != string::npos)) {
+                    if (isalpha(*(it+1))) {
                         it++;
                         number += *it;
+                        while (isdigit(*(it+1)) || isalpha(*(it+1)) || (variable_ok.find(*(it+1)) != string::npos)) {
+                            it++;
+                            number += *it;
+                        }
+                        for (auto i = rat_vec.begin(); i != rat_vec.end(); ++i) {
+                            if (i->name == number) {
+                                rational_number temp = *i;
+                                if (temp.type == negative) temp.type = positive;
+                                else if (temp.type == positive) temp.type = negative;
+                                operand_stack.push(temp);
+                                break;
+                            }
+                            if ((i+1) == rat_vec.end()) {
+                                err = undfined_variable;
+                                offending_string = number;
+                                return;
+                            }
+                        }
+                    } else {
+                        number += *it;
+                        while (isdigit(*(it+1)) || (special_num.find(*(it+1)) != string::npos)) {
+                            it++;
+                            number += *it;
+                        }
+                        operand_stack.push(parse_number(number));
                     }
-                    operand_stack.push(parse_number(number));
                 }
                 else process_operator(*it);
             }
@@ -270,6 +310,7 @@ void infix_parse(string& line, vector<rational_number>& rat_vec) {
 
     // make sure only one operand is left
     if (operand_stack.size() != 1) {
+        cout << rational_repr_fraction(operand_stack.top()) << endl;
         err = bad_expression_formulation;
         offending_char = line[0];
         return;
@@ -334,8 +375,86 @@ void process_command(string& command) {
     }
 }
 
+string replace(string str, const string& from, const string& to) {
+    size_t start_pos;
+    while (str.find(from) != string::npos) {
+        start_pos = str.find(from);
+        str.replace(start_pos, from.length(), to);
+    }
+    return str;
+}
+
+vector<string> split(string l) {
+   vector<string> tokens;
+   string token;
+   istringstream tokenStream(l);
+   while (std::getline(tokenStream, token, ' ')) {
+      tokens.push_back(token);
+   }
+   return tokens;
+}
+
+bool allowable_variable_name(string variable) {
+    if (!isalpha(variable[0])) return false;
+    for (auto i = variable.cbegin() + 1; i != variable.cend(); ++i) {
+        if (!(isdigit(*i) || isalpha(*i) || variable_ok.find(*i) != string::npos)) return false;
+    }
+    return true;
+}
+
+bool validate_lambda(vector<string>& parameters, string expression, vector<rational_number>& rat_vec) {
+    string test = expression;
+    // check to see if all parameters are used
+    for (auto&& i : parameters) {
+        if (expression.find(i) == string::npos) {
+            err = unused_parameter;
+            offending_string = i;
+            return false;
+        }
+        test = replace(test, i, "5");
+    }
+    infix_parse(test, rat_vec);
+    if (err) {
+        err = bad_expression_formulation;
+        offending_string = expression;
+        return false;
+    }
+    return true;
+}
+
+void create_lambda(string& line, vector<lambda>& lambda_vec, vector<rational_number>& rat_vec) {
+    string name;
+    vector<string> tokens = split(line);
+    if (tokens[1] == ":=") {
+        err = no_lambda_parameters;
+        return;
+    }
+    name = tokens[0];
+    if (!allowable_variable_name(name)) {
+        err = poor_variable_name;
+        offending_string = name;
+        return;
+    }
+    vector<string> parameters;
+    for (int i = 1; tokens[i] != ":="; ++i) {
+        if (!allowable_variable_name(tokens[i])) {
+            err = poor_parameter_name;
+            offending_string = tokens[i];
+            return;
+        }
+        parameters.push_back(tokens[i]);
+    }
+    string expression = line.substr(line.find(":=") + 2, line.size());
+    if (validate_lambda(parameters, expression, rat_vec)) {
+        lambda l;
+        l.name = name;
+        l.expression = expression;
+        l.parameters = parameters;
+    }
+}
+
 // parsing controller
-void controller(string line, vector<rational_number>& rat_vec) {
+void controller(string line, vector<rational_number>& rat_vec, vector<lambda>& lambda_vec) {
     err = nil;
     offending_char = ' ';
     offending_string = " ";
@@ -353,8 +472,16 @@ void controller(string line, vector<rational_number>& rat_vec) {
         return;
     }
 
+    // if not command, check if it is a lambda expression
+
+    if (line.find(":=") != string::npos) {
+        create_lambda(line, lambda_vec, rat_vec);
+        if (err)
+            error_message();
+        return;
+    }
     // its not a command, prepare for expression processing: remove whitespace
-    line.erase(remove(line.begin(), line.end(), ' '), line.end());
+    //line.erase(remove(line.begin(), line.end(), ' '), line.end());
 
     // get assignment if applicable
     has_output = get_assignment(line);

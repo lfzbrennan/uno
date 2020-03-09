@@ -7,6 +7,7 @@
 
 #include <stack>
 #include <map>
+#include <regex>
 
 using namespace std;
 using boost::lexical_cast;
@@ -18,6 +19,6 @@ using boost::multiprecision::uint128_t;
 
 bool get_assignment(string& line);
 void make_output(vector<rational_number>& rat_vec);
-void controller(string line, vector<rational_number>& rat_vec);
+void controller(string line, vector<rational_number>& rat_vec, vector<lambda>& lambda_vec);
 
 #endif

@@ -17,9 +17,5 @@
 
 #include <stdio.h>
 
-using namespace std;
-
-vector<rational_number> rational_vec;
-
 vector<string> comma_split(string l);
 #endif
