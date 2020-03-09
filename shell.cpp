@@ -1,28 +1,4 @@
-#include <boost/multiprecision/cpp_int.hpp>
-
-#include "lib/number.hpp"
-#include "lib/rational_repr.cpp"
-#include "lib/rational_misc.cpp"
-#include "lib/rational_operations.cpp"
-
-#include "parse/god_parse.cpp"
-
-#include "config.hpp"
-
-#include <iostream>
-#include <vector>
-
-#include <stdio.h>
-
-typedef std::vector<rational_number> rational_vec;
-
-/*
-char* commands[] = {
-    "clear",
-};
-*/
-
-using namespace std;
+#include "shell.hpp"
 
 vector<string> comma_split(string l) {
    vector<string> tokens;
@@ -35,21 +11,18 @@ vector<string> comma_split(string l) {
 }
 
 int main(int argc, char** argv) {
-
     system("cat ./banner.d");
 
     string line;
     vector<string> tokens;
 
     while(true) {
-
         cout << INTERP_TEXT;
         getline(cin, line);
         tokens = comma_split(line);
 
         for (vector<string>::iterator it = tokens.begin(); it < tokens.end(); ++it) {
-            controller(*it);
+            controller(*it, rational_vec);
         }
-
     }
 }

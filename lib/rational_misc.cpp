@@ -1,4 +1,3 @@
-#include "number.hpp"
 #include "rational_misc.hpp"
 
 using boost::multiprecision::uint128_t;

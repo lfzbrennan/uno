@@ -1,5 +1,5 @@
-#ifndef NUMBER_DOT_HPP
-#define NUMBER_DOT_HPP
+#ifndef _NUMBER_HPP
+#define _NUMBER_HPP
 
 #include <iostream>
 #include <numeric>

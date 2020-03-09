@@ -1,29 +1,31 @@
-#include "../lib/number.hpp"
-#include "../lib/rational_operations.hpp"
-#include "../lib/rational_repr.hpp"
-
-#include <stack>
-#include <map>
-
-using namespace std;
-using boost::lexical_cast;
-using boost::multiprecision::uint128_t;
-
-#include <stdlib.h>
-#include <unistd.h>
+#include "god_parse.hpp"
 
 stack<rational_number> operand_stack;
 stack<char> operator_stack;
 
+bool has_output;
+string output_name;
 rational_number output;
 
+rational_number cur;
+
+string number;
+char top;
+
+string commands[] = {
+    "clear",
+    "history",
+    "show"
+};
 
 const string special_num  = "~.";
 const string operators = "/-+*";
+const string variable_ok = "_";
 
-int paren_count;
-string number;
-char top;
+enum errors {nil, bad_expression_character, bad_expression_formulation};
+
+errors err;
+char offending_char;
 
 struct precedence {
     static map<char,int> create_map() {
@@ -42,11 +44,7 @@ struct precedence {
 
 map<char,int> precedence::precedence_map = precedence::create_map();
 
-enum errors {nil, bad_expression_character, bad_expression_formulation};
-
-errors err;
-char offending_char;
-
+// error message function
 void error_message() {
     switch (err) {
         case bad_expression_character:
@@ -58,7 +56,6 @@ void error_message() {
         default:
             cout << "Something went wrong" << endl;
     }
-
 }
 
 rational_number operation(rational_number r1, rational_number r2, char op) {
@@ -94,13 +91,25 @@ rational_number dec_to_rat(string& num) {
         num.substr(1, num.size());
     }
 
-    int i = num.find('.');
+    int dec = num.find('.');
 
-    if ((i-1) == num.size()) {
+    if ((dec-1) == num.size()) {
         out.numerator = lexical_cast<uint128_t>(num.substr(num.size()-1));
         out.denominator = 1;
     } else {
-
+        out.type = zero;
+        for (int i = 0; i < num.size(); i++) {
+            if (i == dec || num[i] == '0') continue;
+            cur.type = positive;
+            if (dec > i) {
+                cur.numerator = ((int)num[i] - '0') * (int)pow(10, dec - i - 1);
+                cur.denominator = 1;
+            } else {
+                cur.numerator = ((int)num[i] - '0');
+                cur.denominator = (int)pow(10, i - dec);
+            }
+            out = rational_addition(out, cur);
+        }
     }
     return out;
 }
@@ -139,6 +148,7 @@ rational_number parse_number(string& num) {
     rational_number out;
 
     // it is a decimal, parse appropriately
+
     if (num.find('.') != string::npos) {
         out = dec_to_rat(num);
         out.type = t;
@@ -165,18 +175,15 @@ void infix_parse(string& line) {
 
     top = ' ';
 
-    paren_count = 0;
-
     for (string::const_iterator it = line.cbegin(); it != line.cend(); ++it) {
         number = "";
         // if char is '('
         if (*it == '(') {
-            paren_count++;
             operator_stack.push(*it);
         }
 
         // if char is a digit
-        else if (isdigit(*it)) {
+        else if (isdigit(*it) || *it == '.') {
             // keeps parsing until number is complete
             number += *it;
             while (isdigit(*(it+1)) || (special_num.find(*(it+1)) != string::npos)) {
@@ -191,7 +198,6 @@ void infix_parse(string& line) {
             // if char is a '-'
             if (*it == '-') {
                 if (it == line.cbegin() || operators.find(*(it-1)) != string::npos)  {
-                    cout << "found a number!" << endl;
                     number += *it;
                     while (isdigit(*(it+1)) || (special_num.find(*(it+1)) != string::npos)) {
                         it++;
@@ -234,47 +240,75 @@ void infix_parse(string& line) {
     }
 
     // set output and leave
-
     output = operand_stack.top();
-
-    // while stuff in operand_stack and operator_stack -> eval
-    // make sure there is nothing left in stacks at the end, or else error
-    // if so, throw bad_expression_formulation
-    // if everything is good, return and set output to final stack output
 }
 
-void controller(string line) {
+// if there is an assignment, set output
+bool get_assignment(string& line) {
+    if (line.find('=') != string::npos) {
+        if (!isalpha(line[0])) {
+            err = bad_expression_formulation;
+            offending_char = line[0];
+            return false;
+        }
+        string name = "";
+        int i = 0;
+        for (; isalpha(line[i]) || isdigit(line[i]) || variable_ok.find(line[i]) != string::npos; ++i) {
+            name += line[i];
+        }
+        if (line[i] == '=') {
+            output_name = name;
+            line = line.substr(i+1, line.size());
+            return true;
+        } else {
+            err = bad_expression_formulation;
+            offending_char = line[i];
+            return false;
+        }
+    }
+    return false;
+}
+
+// after parsing, print output as needed
+void make_output(vector<rational_number>& rat_vec) {
+    if (has_output) {
+        for (auto&& it : rat_vec) {
+            if (it.name == output_name) {
+                it.type = output.type;
+                it.numerator = output.numerator;
+                it.denominator = output.denominator;
+                return;
+            }
+        }
+        output.name = output_name;
+        rat_vec.push_back(output);
+    } else {
+        cout << rational_repr_fraction(output) << endl;
+    }
+}
+
+// parsing controller
+void controller(string line, vector<rational_number>& rat_vec) {
     err = nil;
     offending_char = ' ';
 
     // remove whitespace
     line.erase(remove(line.begin(), line.end(), ' '), line.end());
 
+    // get assignment if applicable
+    has_output = get_assignment(line);
+    if (err) {
+        error_message();
+        return;
+    }
+
+    // process the expression
     infix_parse(line);
     if (err) {
         error_message();
         return;
     }
-    cout << rational_repr_fraction(output) << endl;
 
-    // check if assignment? ie x =
-    if (err) {
-        error_message();
-        return;
-    }
-
-    // now parse expression
-
-    /*
-
-    rational_number parsed = parse(expression)
-
-    either:
-        x = rational_number
-    or:
-        cout << rational_expression << endl;
-
-
-    */
-
+    // make output
+    make_output(rat_vec);
 }

@@ -1,5 +1,5 @@
-#ifndef RATIONAL_MISC_DOT_HPP
-#define RATIONAL_MISC_DOT_HPP
+#ifndef _RATIONAL_MISC_HPP
+#define _RATIONAL_MISC_HPP
 
 #include "number.hpp"
 

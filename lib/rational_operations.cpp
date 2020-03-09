@@ -1,10 +1,4 @@
-#include "number.hpp"
-#include "rational_misc.hpp"
 #include "rational_operations.hpp"
-
-using namespace std;
-
-using boost::multiprecision::uint128_t;
 
 rational_number rational_multiply(rational_number r1, rational_number r2) {
     rational_number out;
