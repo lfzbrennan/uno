@@ -1,5 +1,8 @@
 #include "rational_repr.hpp"
 
+#include <iostream>
+using namespace std;
+
 string rational_repr_fraction(const rational_number& num) {
     switch(num.type) {
         case zero:
