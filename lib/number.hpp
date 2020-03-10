@@ -25,4 +25,6 @@ typedef struct {
     std::string expression;
 } lambda;
 
+typedef rational_number rat;
+
 #endif

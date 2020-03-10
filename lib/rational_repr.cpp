@@ -3,7 +3,7 @@
 #include <iostream>
 using namespace std;
 
-string rational_repr_fraction(const rational_number& num) {
+string rational_repr_fraction(const rat& num) {
     switch(num.type) {
         case zero:
             return "0";
@@ -18,7 +18,7 @@ string rational_repr_fraction(const rational_number& num) {
     }
 }
 
-string rational_repr_decimal(const rational_number& num) {
+string rational_repr_decimal(const rat& num) {
     switch(num.type) {
         case zero:
             return "0";

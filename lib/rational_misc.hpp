@@ -3,5 +3,5 @@
 
 #include "number.hpp"
 
-void rational_simplify(rational_number& num);
+void rational_simplify(rat& num);
 #endif

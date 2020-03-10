@@ -1,7 +1,7 @@
 #include "rational_operations.hpp"
 
-rational_number rational_multiply(rational_number r1, rational_number r2) {
-    rational_number out;
+rat rational_multiply(rat r1, rat r2) {
+    rat out;
 
     // check edge cases
     if (r1.type == zero || r2.type == zero) {
@@ -32,7 +32,7 @@ rational_number rational_multiply(rational_number r1, rational_number r2) {
     return out;
 }
 
-rational_number rational_divide(rational_number r1, rational_number r2) {
+rat rational_divide(rat r1, rat r2) {
     uint128_t temp = r2.numerator;
     r2.numerator = r2.denominator;
     r2.denominator = temp;
@@ -40,8 +40,8 @@ rational_number rational_divide(rational_number r1, rational_number r2) {
     return rational_multiply(r1, r2);
 }
 
-rational_number rational_addition(rational_number r1, rational_number r2) {
-    rational_number out;
+rat rational_addition(rat r1, rat r2) {
+    rat out;
 
     if (r1.type == undefined || r2.type == undefined) {
         out.type = undefined;
@@ -115,7 +115,7 @@ rational_number rational_addition(rational_number r1, rational_number r2) {
     return out;
 }
 
-rational_number rational_subtract(rational_number r1, rational_number r2) {
+rat rational_subtract(rat r1, rat r2) {
 
     if (r2.type == positive)
         r2.type = negative;

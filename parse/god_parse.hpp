@@ -5,6 +5,8 @@
 #include "../lib/rational_operations.hpp"
 #include "../lib/rational_repr.hpp"
 
+#include "commands.hpp"
+
 #include <stack>
 #include <map>
 #include <regex>
@@ -17,10 +19,27 @@ using boost::multiprecision::uint128_t;
 #include <unistd.h>
 #include <math.h>
 
+vector<string> split(string l);
 
-rational_number eval_lambda(const lambda& l, vector<string>& params);
+string replace(string str, const string& from, const string& to);
+
+rat operation(rat r1, rat r2, char op);
+rat eval_lambda(const lambda& l, vector<string>& params);
+rat dec_to_rat(string& num);
+rat parse_number(string& num);
+
 bool get_assignment(string& line);
-void make_output(vector<rational_number>& rat_vec);
-void controller(string line, vector<rational_number>& rat_vec, vector<lambda>& lambda_vec);
+bool allowable_variable_name(string variable);
+bool validate_lambda(vector<string>& parameters, string expression);
+bool validate_lambda_parameters(vector<string>& params);
+
+void create_lambda(string& line);
+void error_message();
+void process_infix();
+void process_command(string& command);
+void infix_parse(string& line);
+void process_operator(char front);
+void make_output();
+void controller(string line, vector<rat>& rational_vec, vector<lambda>& l_vec);
 
 #endif
