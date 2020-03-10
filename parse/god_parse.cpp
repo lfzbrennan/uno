@@ -15,7 +15,8 @@ char top;
 string commands[] = {
     "clear",
     "history",
-    "show"
+    "show",
+    "exit"
 };
 
 const string special_num  = "~.";
@@ -30,7 +31,8 @@ enum errors {
     no_lambda_parameters,
     poor_variable_name,
     poor_parameter_name,
-    unused_parameter
+    unused_parameter,
+    poor_lambda_evaluation
 };
 
 errors err;
@@ -38,6 +40,9 @@ char offending_char;
 string offending_string;
 
 vector<rational_number> lambda_temp;
+
+vector<rational_number>* rat_vec;
+vector<lambda>* lam_vec;
 
 struct precedence {
     static map<char,int> create_map() {
@@ -79,6 +84,9 @@ void error_message() {
             break;
         case unused_parameter:
             cout << "unused_parameter " << offending_string << endl;
+            break;
+        case poor_lambda_evaluation:
+            cout << "poor lambda evaluation with lamda: " << offending_string << endl;
             break;
         default:
             cout << "Something went wrong" << endl;
@@ -201,13 +209,13 @@ rational_number parse_number(string& num) {
     }
 }
 
-void infix_parse(string& line, vector<rational_number>& rat_vec) {
+void infix_parse(string& line) {
     operand_stack = stack<rational_number>();
     operator_stack = stack<char>();
 
     top = ' ';
 
-    for (string::const_iterator it = line.cbegin(); it != line.cend(); ++it) {
+    for (string::const_iterator it = line.cbegin(); it < line.cend(); ++it) {
         number = "";
 
         if (*it == ' ') continue;
@@ -216,32 +224,78 @@ void infix_parse(string& line, vector<rational_number>& rat_vec) {
             operator_stack.push(*it);
         }
 
-        // if char is a variable
+        // if char is a variable, or a LAMBDA EXPRESSION
         else if (isalpha(*it)) {
-            number += *it;
-            while (isdigit(*(it+1)) || isalpha(*(it+1)) || (variable_ok.find(*(it+1)) != string::npos)) {
-                it++;
-                number += *it;
+            // if no variables or LAMBDAS, error
+            if (rat_vec->empty() && lam_vec->empty()) {
+                err = undfined_variable;
+                offending_string = number;
+                return;
             }
-            for (auto i = rat_vec.begin(); i != rat_vec.end(); ++i) {
+            // get full variable name
+            number += *it;
+            if ((it+1) != line.cend()) {
+                while (isdigit(*(it+1)) || isalpha(*(it+1)) || (variable_ok.find(*(it+1)) != string::npos)) {
+                    it++;
+                    number += *it;
+                    if (it == line.cend()) break;
+                }
+            }
+
+            bool good = false;
+            // check to see if that variable exists
+            for (auto i = rat_vec->begin(); i != rat_vec->end(); ++i) {
                 if (i->name == number) {
                     operand_stack.push(*i);
+                    good = true;
                     break;
                 }
-                if ((i+1) == rat_vec.end()) {
-                    err = undfined_variable;
-                    offending_string = number;
-                    return;
+            }
+
+            // check to see if a lambda exists
+            for (auto i = lam_vec->begin(); i != lam_vec->end(); ++i) {
+                if (i->name == number) {
+                    // we found a lambda, now eval
+                    it++;
+                    int param_num = i->parameters.size();
+                    vector<string> params;
+                    string token;
+                    while (params.size() < param_num) {
+                        token = "";
+                        while (it < line.cend()) {
+                            if (*it == ' ') {
+                                if (token != "") break;
+                            } else if (isalpha(*it) || isdigit(*it) || variable_ok.find(*it) != string::npos){
+                                token += *it;
+                            } else break;
+                            it++;
+                        }
+                        params.push_back(token);
+                    }
+                    eval_lambda(*i, params);
+                    if (!err)
+                        good = true;
+                    break;
                 }
             }
+            if (!good) {
+                cout << "here" << endl;
+                err = undfined_variable;
+                offending_string = number;
+                return;
+            }
+
+            // check to see if
         }
         // if char is a digit
         else if (isdigit(*it) || *it == '.') {
             // keeps parsing until number is complete
             number += *it;
-            while (isdigit(*(it+1)) || (special_num.find(*(it+1)) != string::npos)) {
-                it++;
-                number += *it;
+            if ((it+1) != line.cend()) {
+                while (isdigit(*(it+1)) || (special_num.find(*(it+1)) != string::npos)) {
+                    it++;
+                    number += *it;
+                }
             }
             operand_stack.push(parse_number(number));
         }
@@ -258,7 +312,7 @@ void infix_parse(string& line, vector<rational_number>& rat_vec) {
                             it++;
                             number += *it;
                         }
-                        for (auto i = rat_vec.begin(); i != rat_vec.end(); ++i) {
+                        for (auto i = rat_vec->begin(); i < rat_vec->end(); ++i) {
                             if (i->name == number) {
                                 rational_number temp = *i;
                                 if (temp.type == negative) temp.type = positive;
@@ -266,7 +320,7 @@ void infix_parse(string& line, vector<rational_number>& rat_vec) {
                                 operand_stack.push(temp);
                                 break;
                             }
-                            if ((i+1) == rat_vec.end()) {
+                            if ((i+1) == rat_vec->end()) {
                                 err = undfined_variable;
                                 offending_string = number;
                                 return;
@@ -333,13 +387,16 @@ bool get_assignment(string& line) {
         for (; isalpha(line[i]) || isdigit(line[i]) || variable_ok.find(line[i]) != string::npos; ++i) {
             name += line[i];
         }
-        if (line[i] == '=') {
+        char next;
+        while (line[i] != ' ') i++;
+        next = line[i+1];
+        if (next == '=') {
             output_name = name;
-            line = line.substr(i+1, line.size());
+            line = line.substr(i+2, line.size());
             return true;
         } else {
             err = bad_expression_formulation;
-            offending_char = line[i];
+            offending_char = next;
             return false;
         }
     }
@@ -347,9 +404,9 @@ bool get_assignment(string& line) {
 }
 
 // after parsing, print output as needed
-void make_output(vector<rational_number>& rat_vec) {
+void make_output() {
     if (has_output) {
-        for (auto&& it : rat_vec) {
+        for (auto&& it : *rat_vec) {
             if (it.name == output_name) {
                 it.type = output.type;
                 it.numerator = output.numerator;
@@ -358,7 +415,7 @@ void make_output(vector<rational_number>& rat_vec) {
             }
         }
         output.name = output_name;
-        rat_vec.push_back(output);
+        rat_vec->push_back(output);
     } else {
         cout << rational_repr_fraction(output) << endl;
     }
@@ -402,7 +459,7 @@ bool allowable_variable_name(string variable) {
     return true;
 }
 
-bool validate_lambda(vector<string>& parameters, string expression, vector<rational_number>& rat_vec) {
+bool validate_lambda(vector<string>& parameters, string expression) {
     string test = expression;
     // check to see if all parameters are used
     for (auto&& i : parameters) {
@@ -413,7 +470,7 @@ bool validate_lambda(vector<string>& parameters, string expression, vector<ratio
         }
         test = replace(test, i, "5");
     }
-    infix_parse(test, rat_vec);
+    infix_parse(test);
     if (err) {
         err = bad_expression_formulation;
         offending_string = expression;
@@ -422,7 +479,46 @@ bool validate_lambda(vector<string>& parameters, string expression, vector<ratio
     return true;
 }
 
-void create_lambda(string& line, vector<lambda>& lambda_vec, vector<rational_number>& rat_vec) {
+bool validate_params(vector<string>& params) {
+    for (auto&& p : params) {
+        if (isdigit(p[0])) {
+            parse_number(p);
+            if (err) {
+                return false;
+            }
+        } else if (isalpha(p[0])) {
+            bool good = false;
+            for (auto i = rat_vec->begin(); i != rat_vec->end(); i++) {
+                if (i->name == p) {
+                    good = true;
+                    break;
+                }
+            }
+            if (!good) return false;
+        } else return false;
+    }
+    return true;
+}
+
+rational_number eval_lambda(const lambda& l, vector<string>& params) {
+    rational_number out;
+
+    if (!validate_params(params)) {
+        err = poor_lambda_evaluation;
+        offending_string = l.name;
+        return out;
+    }
+
+    string expression = l.expression;
+
+    for (int i = 0; i < params.size(); ++i) {
+        expression = replace(expression, l.parameters[i], params[i]);
+    }
+    infix_parse(expression);
+    return output;
+}
+
+void create_lambda(string& line) {
     string name;
     vector<string> tokens = split(line);
     if (tokens[1] == ":=") {
@@ -445,16 +541,31 @@ void create_lambda(string& line, vector<lambda>& lambda_vec, vector<rational_num
         parameters.push_back(tokens[i]);
     }
     string expression = line.substr(line.find(":=") + 2, line.size());
-    if (validate_lambda(parameters, expression, rat_vec)) {
+    if (validate_lambda(parameters, expression)) {
         lambda l;
         l.name = name;
         l.expression = expression;
         l.parameters = parameters;
+
+        lam_vec->push_back(l);
     }
 }
 
+/*
+controller job:
+
+1. check if its a command
+2. check if it is a lambda definition
+
+now -> we expect it to be some sort of expression eval
+
+1. check if we direct an output (ie x = )
+2. evaluate expression
+
+*/
+
 // parsing controller
-void controller(string line, vector<rational_number>& rat_vec, vector<lambda>& lambda_vec) {
+void controller(string line, vector<rational_number>& rational_vec, vector<lambda>& lambda_vec) {
     err = nil;
     offending_char = ' ';
     offending_string = " ";
@@ -471,17 +582,17 @@ void controller(string line, vector<rational_number>& rat_vec, vector<lambda>& l
             error_message();
         return;
     }
+    lam_vec = &lambda_vec;
+    rat_vec = &rational_vec;
 
     // if not command, check if it is a lambda expression
-
     if (line.find(":=") != string::npos) {
-        create_lambda(line, lambda_vec, rat_vec);
+        create_lambda(line);
         if (err)
             error_message();
         return;
     }
     // its not a command, prepare for expression processing: remove whitespace
-    //line.erase(remove(line.begin(), line.end(), ' '), line.end());
 
     // get assignment if applicable
     has_output = get_assignment(line);
@@ -491,12 +602,12 @@ void controller(string line, vector<rational_number>& rat_vec, vector<lambda>& l
     }
 
     // process the expression
-    infix_parse(line, rat_vec);
+    infix_parse(line);
     if (err) {
         error_message();
         return;
     }
 
     // make output
-    make_output(rat_vec);
+    make_output();
 }

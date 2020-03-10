@@ -17,6 +17,8 @@ using boost::multiprecision::uint128_t;
 #include <unistd.h>
 #include <math.h>
 
+
+rational_number eval_lambda(const lambda& l, vector<string>& params);
 bool get_assignment(string& line);
 void make_output(vector<rational_number>& rat_vec);
 void controller(string line, vector<rational_number>& rat_vec, vector<lambda>& lambda_vec);
