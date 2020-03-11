@@ -3,6 +3,7 @@
 
 #include "../lib/number.hpp"
 #include "../lib/rational_operations.hpp"
+#include "../lib/rational_misc.hpp"
 #include "../lib/rational_repr.hpp"
 
 #include "commands.hpp"
@@ -18,6 +19,9 @@ using boost::multiprecision::uint128_t;
 #include <stdlib.h>
 #include <unistd.h>
 #include <math.h>
+
+#define SPECIAL_POW_CHAR 1
+#define SPECIAL_ROOT_CHAR 2
 
 vector<string> split(string l);
 

@@ -120,6 +120,12 @@ rat operation(rat r1, rat r2, char op) {
             return rational_divide(r1, r2);
         case '*':
             return rational_multiply(r1, r2);
+        case '^':
+            return rational_exponent(r1, r2);
+        case SPECIAL_POW_CHAR:
+            return rational_exponent(r1, r2);
+        case SPECIAL_ROOT_CHAR:
+            return rational_exponent_root(r2, r2);
         default:
             return rational_multiply(r1, r2);
     }
@@ -174,7 +180,7 @@ rat dec_to_rat(string& num) {
     // remove 0's at the front
     for (int i = 0; i < num.size(); i++) {
         if (num[i] != '0' || num[i] == '.') break;
-        num.substr(1, num.size());
+        num.substr(1, string::npos);
     }
 
     // get location of the decimal
@@ -182,7 +188,7 @@ rat dec_to_rat(string& num) {
 
     // check if the decimal is the end of the num
     if ((dec-1) == num.size()) {
-        out.numerator = lexical_cast<uint128_t>(num.substr(num.size()-1));
+        out.numerator = lexical_cast<uno_int>(num.substr(num.size()-1));
         out.denominator = 1;
     }
     // else, then sum each decimal place
@@ -200,9 +206,9 @@ rat dec_to_rat(string& num) {
                     a += num[j];
                     l++;
                 }
-                uint128_t top = lexical_cast<uint128_t>(a);
-                uint128_t r = 1;
-                uint128_t offset = 1;
+                uno_int top = lexical_cast<uno_int>(a);
+                uno_int r = 1;
+                uno_int offset = 1;
 
                 for (int j = 0; j < l; ++j) r *= 10;
                 for (int j = 0; j < n; ++j) offset *= 10;
@@ -212,10 +218,11 @@ rat dec_to_rat(string& num) {
                 temp.numerator = top * r;
                 temp.denominator = (r - 1) * offset;
                 out = rational_addition(out, temp);
+                rational_simplify(out);
                 return out;
             }
             cur.type = positive;
-            // fix this to be uint128_t, not int??????
+            // fix this to be uno_int, not int??????
             if (dec > i) {
                 cur.numerator = ((int)num[i] - '0') * (int)pow(10, dec - i - 1);
                 cur.denominator = 1;
@@ -226,6 +233,7 @@ rat dec_to_rat(string& num) {
             out = rational_addition(out, cur);
         }
     }
+    rational_simplify(out);
     return out;
 }
 
@@ -265,7 +273,7 @@ rat parse_number(string& num) {
     // negative?
     if (num[0] == '-') {
         t = negative;
-        num = num.substr(1, num.size());
+        num = num.substr(1, string::npos);
     }
 
     rat out;
@@ -293,7 +301,7 @@ rat parse_number(string& num) {
             }
         }
         // create rat with numer as the int and denom 1, assuming its not zero
-        out.numerator = lexical_cast<uint128_t>(num);
+        out.numerator = lexical_cast<uno_int>(num);
         if (out.numerator == 0) out.type = zero;
         else {
             out.type = t;
@@ -378,7 +386,7 @@ void infix_parse(string& line) {
                         while (it < line.cend()) {
                             if (*it == ' ') {
                                 if (token != "") break;
-                            } else if (good_variable_character(*it)) {
+                            } else if (good_variable_character(*it) || *it == '~' || *it == '.') {
                                 token += *it;
                             } else break;
                             it++;
@@ -525,7 +533,7 @@ bool get_assignment(string& line) {
         next = line[i+1];
         if (next == '=') {
             output_name = name;
-            line = line.substr(i+2, line.size());
+            line = line.substr(i+2, string::npos);
             return true;
         } else {
             err = bad_expression_formulation;
@@ -679,7 +687,7 @@ void create_lambda(string& line) {
         }
         parameters.push_back(tokens[i]);
     }
-    string expression = line.substr(line.find(":=") + 2, line.size());
+    string expression = line.substr(line.find(":=") + 2, string::npos);
     if (validate_lambda(parameters, expression)) {
         lambda l;
         l.name = name;
@@ -711,9 +719,16 @@ void controller(string line, vector<rat>& rational_vec, vector<lambda>& l_vec) {
     // if it is a command, process accordingly
     string command = "";
 
+    // trim the fat
+    int i = 0;
+    while (line[i] == ' ')
+        i++;
+    if (i) line = line.substr(i, string::npos);
+
     // get first word, see if it is a command
-    for (string::const_iterator it = line.cbegin(); (*it != ' ') && (it != line.cend()); ++it)
+    for (string::const_iterator it = line.cbegin(); (*it != ' ') && (it != line.cend()); ++it) {
         command += *it;
+    }
 
     if (find(begin(commands), end(commands), command) != end(commands)) {
         // command is one of known commands, must be command or be broken

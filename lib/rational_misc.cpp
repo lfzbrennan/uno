@@ -1,10 +1,12 @@
 #include "rational_misc.hpp"
 
-using boost::multiprecision::uint128_t;
-
 void rational_simplify(rat& num) {
-    uint128_t gcd = boost::integer::gcd(num.denominator, num.numerator);
+    uno_int gcd = boost::integer::gcd(num.denominator, num.numerator);
     if (gcd <= 1) return;
     num.denominator /= gcd;
     num.numerator /= gcd;
+}
+
+uno_float rat_to_large_float(rat& num) {
+    return numeric_cast<uno_float >(num.numerator) / numeric_cast<uno_float >(num.numerator);
 }

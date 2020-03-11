@@ -11,5 +11,7 @@ rat rational_multiply(rat r1, rat r2);
 rat rational_divide(rat r1, rat r2);
 rat rational_addition(rat r1, rat r2);
 rat rational_subtract(rat r1, rat r2);
+rat rational_exponent(rat r1, rat r2);
+rat rational_exponent_root(rat r1, rat r2);
 
 #endif

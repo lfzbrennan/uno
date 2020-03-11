@@ -125,3 +125,39 @@ rat rational_subtract(rat r1, rat r2) {
 
     return rational_addition(r1, r2);
 }
+
+rat rational_exponent(rat r1, rat r2) {
+    rat out;
+
+    // 0^anything = 0, undef^anything = undef
+    if (r1.type == zero || r1.type == undefined) {
+        out.type = r1.type;
+        return out;
+    }
+    // anything^zero = 1
+    if (r2.type == zero) {
+        out.type = positive;
+        out.numerator = 1;
+        out.denominator = 1;
+        return out;
+    }
+    // (a/b)^-c = (b/a)^c
+    if (r2.type == negative) {
+        uint128_t temp = r1.numerator;
+        r1.numerator = r1.denominator;
+        r1.denominator = temp;
+    }
+
+    out.numerator = boost::multiprecision::pow(r1.numerator, (int)r2.numerator);
+    out.denominator = boost::multiprecision::pow(r1.denominator, (int)r2.numerator);
+
+
+    return out;
+}
+
+rat rational_exponent_root(rat r1, rat r2) {
+    uint128_t temp = r2.numerator;
+    r2.numerator = r2.denominator;
+    r2.denominator = temp;
+    return rational_exponent(r1, r2);
+}

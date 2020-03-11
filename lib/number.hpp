@@ -7,16 +7,22 @@
 #include <boost/multiprecision/cpp_int.hpp>
 #include <boost/lexical_cast.hpp>
 
-#include <boost/multiprecision/cpp_int.hpp>
+#include <boost/multiprecision/cpp_dec_float.hpp>
 #include <boost/integer/common_factor.hpp>
 
 enum rational_types {zero, negative, positive, undefined};
 
+using boost::multiprecision::cpp_dec_float;
+using boost::multiprecision::uint1024_t;
+
+typedef boost::multiprecision::number<cpp_dec_float<1000> > uno_float;
+typedef uint1024_t uno_int;
+
 typedef struct {
     std::string name;
     rational_types type; // 0 = 0, 1 = negative, 2 = positive, 3 = inf
-    boost::multiprecision::uint128_t numerator;
-    boost::multiprecision::uint128_t denominator;
+    uno_int numerator;
+    uno_int denominator;
 } rational_number;
 
 typedef struct {
