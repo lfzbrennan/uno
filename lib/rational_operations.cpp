@@ -15,8 +15,8 @@ rat rational_multiply(rat r1, rat r2) {
     }
 
     // calculate
-    uint128_t top = r1.numerator * r2.numerator;
-    uint128_t bot = r1.denominator * r2.denominator;
+    uno_int top = r1.numerator * r2.numerator;
+    uno_int bot = r1.denominator * r2.denominator;
     out.numerator = top;
     out.denominator = bot;
 
@@ -33,7 +33,7 @@ rat rational_multiply(rat r1, rat r2) {
 }
 
 rat rational_divide(rat r1, rat r2) {
-    uint128_t temp = r2.numerator;
+    uno_int temp = r2.numerator;
     r2.numerator = r2.denominator;
     r2.denominator = temp;
 
@@ -62,10 +62,10 @@ rat rational_addition(rat r1, rat r2) {
         return out;
     }
 
-    uint128_t r1d = r1.denominator;
-    uint128_t r2d = r2.denominator;
+    uno_int r1d = r1.denominator;
+    uno_int r2d = r2.denominator;
 
-    uint128_t common_denom = r1d * r2d;
+    uno_int common_denom = r1d * r2d;
 
     r1.numerator *= r2d;
     r2.numerator *= r1d;
@@ -128,6 +128,7 @@ rat rational_subtract(rat r1, rat r2) {
 
 rat rational_exponent(rat r1, rat r2) {
     rat out;
+    out.type = positive;
 
     // 0^anything = 0, undef^anything = undef
     if (r1.type == zero || r1.type == undefined) {
@@ -143,20 +144,39 @@ rat rational_exponent(rat r1, rat r2) {
     }
     // (a/b)^-c = (b/a)^c
     if (r2.type == negative) {
-        uint128_t temp = r1.numerator;
+        uno_int temp = r1.numerator;
         r1.numerator = r1.denominator;
         r1.denominator = temp;
     }
+    // anything^1 = anything
+    if (r2.type == zero && r2.numerator == 1 && r2.denominator == 1)
+        return r1;
 
     out.numerator = boost::multiprecision::pow(r1.numerator, (int)r2.numerator);
-    out.denominator = boost::multiprecision::pow(r1.denominator, (int)r2.numerator);
+    if (r1.denominator != 1) out.denominator = boost::multiprecision::pow(r1.denominator, (int)r2.numerator);
+    else out.denominator = 1;
 
+    if (r1.type == negative && r2.numerator % 2) out.type = negative;
+    else out.type = positive;
 
+    rational_simplify(out);
+
+    if (r2.denominator!= 1) {
+        if (out.type == negative) {
+            out.type = undefined;
+            return out;
+        }
+        uno_float estimation = rat_to_large_float(out);
+        uno_float root = boost::multiprecision::pow(estimation, 1.0 / numeric_cast<double>(r2.denominator));
+        out = large_float_to_rat(root);
+        out.type = positive;
+        rational_simplify(out);
+    }
     return out;
 }
 
 rat rational_exponent_root(rat r1, rat r2) {
-    uint128_t temp = r2.numerator;
+    uno_int temp = r2.numerator;
     r2.numerator = r2.denominator;
     r2.denominator = temp;
     return rational_exponent(r1, r2);

@@ -1,9 +1,9 @@
 #include <iostream>
+#include "shell.hpp"
 
 using namespace std;
 
 int main() {
-    char x = ' ';
-    if (isalpha(x)) cout << "yes" << endl;
-    else cout << "no" << endl;
+    int x = 5;
+    cout << boost::multiprecision::pow(uno_int(10), 4) << endl;
 }

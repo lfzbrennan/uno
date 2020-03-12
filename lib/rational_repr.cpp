@@ -3,6 +3,8 @@
 #include <iostream>
 using namespace std;
 
+uno_int max_int_repr = uno_int(100000000000);
+
 string rational_repr_fraction(const rat& num) {
     switch(num.type) {
         case zero:
@@ -29,4 +31,9 @@ string rational_repr_decimal(const rat& num) {
         case negative:
             return "-" + lexical_cast<string>(numeric_cast<uno_float>(num.numerator) / numeric_cast<uno_float>(num.denominator));
     }
+}
+
+string print_rat(const rat& num) {
+    if (num.numerator > max_int_repr || num.denominator > max_int_repr) return rational_repr_decimal(num);
+    return rational_repr_fraction(num);
 }

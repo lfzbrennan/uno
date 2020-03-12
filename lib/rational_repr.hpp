@@ -11,4 +11,5 @@ using namespace std;
 
 string rational_repr_fraction(const rat& num);
 string rational_repr_decimal(const rat& num);
+string print_rat(const rat& num);
 #endif

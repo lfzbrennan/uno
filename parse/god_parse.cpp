@@ -33,7 +33,7 @@ string commands[] = {
 
 // collection of special characters
 const string special_num = "~.";
-const string operators = "/-+*";
+const string operators = "/-+*^";
 const string variable_ok = "_";
 
 // Possible errors. Defaults to nil (no errors)
@@ -46,7 +46,8 @@ enum errors {
     poor_variable_name,
     poor_parameter_name,
     unused_parameter,
-    poor_lambda_evaluation
+    poor_lambda_evaluation,
+    imaginary_exponent
 };
 
 // global error information
@@ -67,6 +68,8 @@ struct precedence {
           m['/'] = 2;
           m['*'] = 2;
           m['^'] = 3;
+          m[SPECIAL_POW_CHAR] = 3;
+          m[SPECIAL_ROOT_CHAR] = 3;
           m['('] = 0;
           m[')'] = 0;
           return m;
@@ -125,7 +128,7 @@ rat operation(rat r1, rat r2, char op) {
         case SPECIAL_POW_CHAR:
             return rational_exponent(r1, r2);
         case SPECIAL_ROOT_CHAR:
-            return rational_exponent_root(r2, r2);
+            return rational_exponent_root(r1, r2);
         default:
             return rational_multiply(r1, r2);
     }
@@ -206,7 +209,7 @@ rat dec_to_rat(string& num) {
                     a += num[j];
                     l++;
                 }
-                uno_int top = lexical_cast<uno_int>(a);
+                uno_int top = static_cast<uno_int>(a);
                 uno_int r = 1;
                 uno_int offset = 1;
 
@@ -222,13 +225,13 @@ rat dec_to_rat(string& num) {
                 return out;
             }
             cur.type = positive;
-            // fix this to be uno_int, not int??????
             if (dec > i) {
-                cur.numerator = ((int)num[i] - '0') * (int)pow(10, dec - i - 1);
+                cur.numerator = uno_int((int)num[i] - '0')
+                    * boost::multiprecision::pow(uno_int(10), dec - i - 1);
                 cur.denominator = 1;
             } else {
-                cur.numerator = ((int)num[i] - '0');
-                cur.denominator = (int)pow(10, i - dec);
+                cur.numerator = (int)num[i] - '0';
+                cur.denominator = boost::multiprecision::pow(uno_int(10), i - dec);
             }
             out = rational_addition(out, cur);
         }
@@ -344,8 +347,10 @@ void infix_parse(string& line) {
             // if no variables or LAMBDAS, error
             if (variable_vec->empty() && lamda_vec->empty()) {
                 err = undfined_variable;
-                while (it != line.cend() && good_variable_character(*it))
+                while (it != line.cend() && good_variable_character(*it)){
                     number += *it;
+                    it++;
+                }
                 offending_string = number;
                 return;
             }
@@ -376,7 +381,6 @@ void infix_parse(string& line) {
                 if (i->name == number) {
                     // we found a lambda, now eval
                     it++;
-
                     // collect parameters
                     int param_num = i->parameters.size();
                     vector<string> params;
@@ -477,7 +481,17 @@ void infix_parse(string& line) {
                 else process_operator(*it);
             }
             // all others must be for sure operators
-            else process_operator(*it);
+            else {
+                // check for special ** and // operators
+                if (*it == '*' && it != line.cend() && *(it+1) == '*') {
+                    it++;
+                    process_operator(SPECIAL_POW_CHAR);
+                } else if (*it == '/' && it != line.cend() && *(it+1) == '/') {
+                    it++;
+                    process_operator(SPECIAL_ROOT_CHAR);
+                }
+                else process_operator(*it);
+            }
         }
 
         // If char is a ')', pop infix until corresponding '(' is found
@@ -503,7 +517,7 @@ void infix_parse(string& line) {
 
     // make sure only one operand is left
     if (values.size() != 1) {
-        cout << rational_repr_fraction(values.top()) << endl;
+        cout << print_rat(values.top()) << endl;
         err = bad_expression_formulation;
         offending_char = line[0];
         return;
@@ -558,7 +572,7 @@ void make_output() {
         output.name = output_name;
         variable_vec->push_back(output);
     } else {
-        cout << rational_repr_fraction(output) << endl;
+        cout << print_rat(output) << endl;
     }
 }
 
