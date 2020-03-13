@@ -2,6 +2,7 @@
 #define _RATIONAL_REPR_HPP
 
 #include "number.hpp"
+#include "rational_misc.hpp"
 
 #include <boost/multiprecision/cpp_dec_float.hpp>
 

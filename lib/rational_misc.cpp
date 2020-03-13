@@ -1,16 +1,27 @@
 #include "rational_misc.hpp"
 
-void rational_simplify(rat& num) {
+using namespace std;
+
+// simplify rational number
+void simplify(rat& num) {
     uno_int gcd = boost::integer::gcd(num.denominator, num.numerator);
     if (gcd <= 1) return;
     num.denominator /= gcd;
     num.numerator /= gcd;
 }
 
-uno_float rat_to_large_float(rat& num) {
-    return numeric_cast<uno_float >(num.numerator) / numeric_cast<uno_float >(num.denominator);
+void invert(rat& num) {
+    uno_int temp = num.numerator;
+    num.numerator = num.denominator;
+    num.denominator = temp;
 }
 
+// rat to uno_float
+uno_float rat_to_large_float(rat& num) {
+    return numeric_cast<uno_float>(num.numerator) / numeric_cast<uno_float>(num.denominator);
+}
+
+// uno_float to rat
 rat large_float_to_rat(uno_float& num) {
     rat out;
     rat cur;
@@ -39,6 +50,13 @@ rat large_float_to_rat(uno_float& num) {
         }
         out = rational_addition(out, cur);
     }
-    rational_simplify(out);
+    // simply and return
+    simplify(out);
     return out;
+}
+
+// rat to string decimal representation
+string rat_to_dec_string(rat& num) {
+
+    return "";
 }

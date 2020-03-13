@@ -13,6 +13,9 @@
 stack<rat> values;
 stack<char> ops;
 
+// sentinel string value
+string sentinel = SENTINEL;
+
 // global information about possible output variable
 bool has_output;
 string output_name;
@@ -79,6 +82,32 @@ struct precedence {
 
 map<char,int> precedence::precedence_map = precedence::create_map();
 
+// process each command accordingly
+void process_command(string& command, vector<string>& args) {
+    if (command == "clear") {
+
+    } else if (command == "show") {
+
+    } else if (command == "history") {
+
+    } else if (command == "exit") {
+        if (args.size() == 1)
+            __exit(sentinel);
+
+        else __exit(args[1]);
+    } else if (command == "dec") {
+        if (args.size() == 1)
+            __dec(sentinel);
+
+        else __dec(args[1]);
+    } else if (command == "frac") {
+        if (args.size() == 1)
+            __frac(sentinel);
+
+        else __frac(args[1]);
+    }
+}
+
 // Error message function. Sends appropriate error message to stdout, sometimes
 // using offending_char or offending_string
 void error_message() {
@@ -134,13 +163,16 @@ rat operation(rat r1, rat r2, char op) {
     }
 }
 
-// checks to make sure the decimal is well formed, if not,
+// checks to make sure the decimal is well formed, if not, sets err and returns false
+// if all is well, err is not set and returns true
 bool well_formed_decimal(string& dec) {
+    // end cannot be tilda
     if (dec.back() == '~') {
         err = bad_expression_character;
         offending_char = '~';
         return false;
     }
+    // period and tilda should only be used once
     bool period = false;
     bool tilda = false;
     for (auto&& c : dec) {
@@ -167,6 +199,19 @@ bool well_formed_decimal(string& dec) {
     return true;
 }
 
+// same thing as well formed decimal, but for integers
+bool well_formed_integer(string& num) {
+    for (string::const_iterator it = num.cbegin(); it != num.cend(); ++it) {
+        // if its not all digits, something is up
+        if (!isdigit(*it)) {
+            err = bad_expression_character;
+            offending_char = *it;
+            return false;
+        }
+    }
+    return true;
+}
+
 // converts a decimal string to a rat number
 rat dec_to_rat(string& num) {
     rat out;
@@ -180,11 +225,12 @@ rat dec_to_rat(string& num) {
         }
     }
 
-    // remove 0's at the front
-    for (int i = 0; i < num.size(); i++) {
+    // remove extraneous zeros on front
+    int i = 0;
+    for (; i < num.size(); i++) {
         if (num[i] != '0' || num[i] == '.') break;
-        num.substr(1, string::npos);
     }
+    if (i) num.substr(i, string::npos);
 
     // get location of the decimal
     int dec = num.find('.');
@@ -199,17 +245,21 @@ rat dec_to_rat(string& num) {
         out.type = zero;
         for (int i = 0; i < num.size(); ++i) {
             if (i == dec || num[i] == '0') continue;
+            // tilda is found -> rest of number is repeating.
+            // final fraction calculated using geometric series
             if (num[i] == '~') {
-                //TODO
+
                 int l = 0;
-                int n = i - dec;
                 string a = "";
-                //TODO
+
                 for (int j = i + 1; j < num.size(); ++j) {
                     a += num[j];
                     l++;
                 }
-                uno_int top = static_cast<uno_int>(a);
+
+                int n = i - dec - 1 + l;
+
+                uno_int top = lexical_cast<uno_int>(a);
                 uno_int r = 1;
                 uno_int offset = 1;
 
@@ -221,7 +271,7 @@ rat dec_to_rat(string& num) {
                 temp.numerator = top * r;
                 temp.denominator = (r - 1) * offset;
                 out = rational_addition(out, temp);
-                rational_simplify(out);
+                simplify(out);
                 return out;
             }
             cur.type = positive;
@@ -236,7 +286,7 @@ rat dec_to_rat(string& num) {
             out = rational_addition(out, cur);
         }
     }
-    rational_simplify(out);
+    simplify(out);
     return out;
 }
 
@@ -284,6 +334,7 @@ rat parse_number(string& num) {
 
     // it is a decimal, parse appropriately
     if (num.find('.') != string::npos) {
+        // make sure it is well formed
         if (!well_formed_decimal(num)) return out;
         out = dec_to_rat(num);
         // set sign
@@ -295,14 +346,8 @@ rat parse_number(string& num) {
     // not a decimal, parsing in fractional form
     else {
         // make sure it actually makes sense as a number
-        for (string::const_iterator it = num.cbegin(); it != num.cend(); ++it) {
-            // if its not all digits, something is up
-            if (!isdigit(*it)) {
-                err = bad_expression_character;
-                offending_char = *it;
-                return out;
-            }
-        }
+        if (!well_formed_integer(num)) return out;
+
         // create rat with numer as the int and denom 1, assuming its not zero
         out.numerator = lexical_cast<uno_int>(num);
         if (out.numerator == 0) out.type = zero;
@@ -313,6 +358,8 @@ rat parse_number(string& num) {
         return out;
     }
 }
+
+// helper function that makes sure the current character can be used in a variable name
 
 bool good_variable_character(char check) {
     return isdigit(check) || isalpha(check) || (variable_ok.find(check) != string::npos);
@@ -356,12 +403,9 @@ void infix_parse(string& line) {
             }
             // get full variable name
             number += *it;
-            if ((it+1) != line.cend()) {
-                while (good_variable_character(*(it+1))) {
-                    it++;
-                    number += *it;
-                    if (it == line.cend()) break;
-                }
+            while ((it+1) <= line.cend() && good_variable_character(*(it+1))) {
+                it++;
+                number += *it;
             }
 
             bool good = false;
@@ -413,11 +457,11 @@ void infix_parse(string& line) {
             }
         }
 
-        // char starts with # or '.', must be a number literal
+        // char starts with a digit or '.', must be a number literal
         else if (isdigit(*it) || *it == '.') {
             // keeps parsing until number is complete
             number += *it;
-            if ((it+1) != line.cend()) {
+            if ((it+1) <= line.cend()) {
                 while (isdigit(*(it+1)) || (special_num.find(*(it+1)) != string::npos)) {
                     it++;
                     number += *it;
@@ -511,13 +555,11 @@ void infix_parse(string& line) {
     }
 
     // continue looping through operand stack
-    while (ops.size() > 0) {
+    while (ops.size() > 0)
         process_infix();
-    }
 
     // make sure only one operand is left
     if (values.size() != 1) {
-        cout << print_rat(values.top()) << endl;
         err = bad_expression_formulation;
         offending_char = line[0];
         return;
@@ -538,13 +580,15 @@ bool get_assignment(string& line) {
             return false;
         }
         string name = "";
+
         int i = 0;
-        for (; good_variable_character(line[i]); ++i) {
+        for (; good_variable_character(line[i]); ++i)
             name += line[i];
-        }
+
         char next;
         while (line[i] != ' ') i++;
         next = line[i+1];
+
         if (next == '=') {
             output_name = name;
             line = line.substr(i+2, string::npos);
@@ -560,6 +604,8 @@ bool get_assignment(string& line) {
 
 // after parsing, print output as needed
 void make_output() {
+
+    // if output redirected to a variable
     if (has_output) {
         for (auto&& it : *variable_vec) {
             if (it.name == output_name) {
@@ -571,24 +617,14 @@ void make_output() {
         }
         output.name = output_name;
         variable_vec->push_back(output);
-    } else {
+    }
+    // if not, direct to stdout
+    else {
         cout << print_rat(output) << endl;
     }
 }
 
-// process each command accordingly
-void process_command(string& command) {
-    if (command == "clear") {
-
-    } else if (command == "show") {
-
-    } else if (command == "history") {
-
-    } else if (command == "exit") {
-        __exit();
-    }
-}
-
+// static returns a string with all instaces of `from` changed to `to`
 string replace(string str, const string& from, const string& to) {
     size_t start_pos;
     while (str.find(from) != string::npos) {
@@ -598,24 +634,31 @@ string replace(string str, const string& from, const string& to) {
     return str;
 }
 
+// vector of strings split by whitespace
 vector<string> split(string l) {
    vector<string> tokens;
    string token;
    istringstream tokenStream(l);
-   while (getline(tokenStream, token, ' ')) {
+
+   while (getline(tokenStream, token, ' '))
       tokens.push_back(token);
-   }
+
    return tokens;
 }
 
+// make sure variable name is allowable
 bool allowable_variable_name(string variable) {
     if (!isalpha(variable[0])) return false;
-    for (auto i = variable.cbegin() + 1; i != variable.cend(); ++i) {
-        if (!(isdigit(*i) || isalpha(*i) || variable_ok.find(*i) != string::npos)) return false;
+
+    for (auto i = variable.cbegin() + 1; i < variable.cend(); ++i) {
+        if (!good_variable_character(*i)) return false;
     }
     return true;
 }
 
+// Validate the lambda. This function is used when a lambda is created.
+// Makes sure that all parameters are used, and the expression can actually
+// be used.
 bool validate_lambda(vector<string>& parameters, string expression) {
     string test = expression;
     // check to see if all parameters are used
@@ -627,6 +670,7 @@ bool validate_lambda(vector<string>& parameters, string expression) {
         }
         test = replace(test, i, "5");
     }
+    // test to make sure dummy use case doesn't break
     infix_parse(test);
     if (err) {
         err = bad_expression_formulation;
@@ -636,14 +680,19 @@ bool validate_lambda(vector<string>& parameters, string expression) {
     return true;
 }
 
+// Validates lambda parameters. This is used when an instance of the lambda
+// is being evaluated, making sure that all parameters used are valid
 bool validate_lambda_parameters(vector<string>& params) {
     for (auto&& p : params) {
+        // if it is a digit, should be a number
         if (isdigit(p[0])) {
             parse_number(p);
             if (err) {
                 return false;
             }
-        } else if (isalpha(p[0])) {
+        }
+        // if not, its a variable
+        else if (isalpha(p[0])) {
             bool good = false;
             for (auto i = variable_vec->begin(); i != variable_vec->end(); i++) {
                 if (i->name == p) {
@@ -651,15 +700,17 @@ bool validate_lambda_parameters(vector<string>& params) {
                     break;
                 }
             }
-            if (!good) return false;
+            return good;
         } else return false;
     }
     return true;
 }
 
+// evaluate the lambda
 rat eval_lambda(const lambda& l, vector<string>& params) {
     rat out;
 
+    // make sure parameters make sense
     if (!validate_lambda_parameters(params)) {
         err = poor_lambda_evaluation;
         offending_string = l.name;
@@ -668,13 +719,16 @@ rat eval_lambda(const lambda& l, vector<string>& params) {
 
     string expression = l.expression;
 
+    // replace values with given parameters
     for (int i = 0; i < params.size(); ++i) {
         expression = replace(expression, l.parameters[i], params[i]);
     }
+    // parse the expression
     infix_parse(expression);
     return output;
 }
 
+// create a lambda expression from given input
 void create_lambda(string& line) {
 
     // check to make sure lambda has at least one parameter (otherwise, should be variable)
@@ -684,7 +738,7 @@ void create_lambda(string& line) {
         return;
     }
 
-    //
+    // set the name to be the first token, and make sure it is an allowed name
     string name;
     name = tokens[0];
     if (!allowable_variable_name(name)) {
@@ -692,6 +746,7 @@ void create_lambda(string& line) {
         offending_string = name;
         return;
     }
+    // collect parameters, making sure that each is allowed
     vector<string> parameters;
     for (int i = 1; tokens[i] != ":="; ++i) {
         if (!allowable_variable_name(tokens[i])) {
@@ -701,6 +756,8 @@ void create_lambda(string& line) {
         }
         parameters.push_back(tokens[i]);
     }
+
+    // parse the lambda expression, and validate the expression
     string expression = line.substr(line.find(":=") + 2, string::npos);
     if (validate_lambda(parameters, expression)) {
         lambda l;
@@ -740,13 +797,13 @@ void controller(string line, vector<rat>& rational_vec, vector<lambda>& l_vec) {
     if (i) line = line.substr(i, string::npos);
 
     // get first word, see if it is a command
-    for (string::const_iterator it = line.cbegin(); (*it != ' ') && (it != line.cend()); ++it) {
+    for (string::const_iterator it = line.cbegin(); (*it != ' ') && (it != line.cend()); ++it)
         command += *it;
-    }
 
     if (find(begin(commands), end(commands), command) != end(commands)) {
         // command is one of known commands, must be command or be broken
-        process_command(command);
+        vector<string> args = split(line);
+        process_command(command, args);
         if (err)
             error_message();
         return;

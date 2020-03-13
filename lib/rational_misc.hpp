@@ -9,12 +9,13 @@ using boost::multiprecision::cpp_dec_float;
 using boost::lexical_cast;
 using boost::numeric_cast;
 
-using namespace std;
-
-void rational_simplify(rat& num);
+void simplify(rat& num);
+void invert(rat& num);
 
 uno_float rat_to_large_float(rat& num);
 
 rat large_float_to_rat(uno_float& num);
+
+std::string rat_to_dec_string(rat& num);
 
 #endif

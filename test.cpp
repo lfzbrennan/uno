@@ -3,7 +3,11 @@
 
 using namespace std;
 
+
 int main() {
-    int x = 5;
-    cout << boost::multiprecision::pow(uno_int(10), 4) << endl;
+    uno_int top = 21234323;
+    uno_int bot = 100;
+    uno_float x = numeric_cast<uno_float>(top) / numeric_cast<uno_float>(bot);
+    cout << setprecision(50) << endl;
+    cout << x << endl;
 }

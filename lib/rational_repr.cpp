@@ -3,8 +3,10 @@
 #include <iostream>
 using namespace std;
 
-uno_int max_int_repr = uno_int(100000000000);
+// max size of numerator or denominator to display
+uno_int max_int_repr = lexical_cast<uno_int>("1000000000000");
 
+// returns fration string representation of number
 string rational_repr_fraction(const rat& num) {
     switch(num.type) {
         case zero:
@@ -20,19 +22,23 @@ string rational_repr_fraction(const rat& num) {
     }
 }
 
-string rational_repr_decimal(const rat& num) {
+// returns decimal string representaiton of number -> uses rat_to_dec_string helper function
+string rational_repr_decimal(rat& num) {
     switch(num.type) {
         case zero:
             return "0";
         case undefined:
             return "undef";
         case positive:
-            return lexical_cast<string>(numeric_cast<uno_float>(num.numerator) / numeric_cast<uno_float>(num.denominator));
+            return rat_to_dec_string(num);
+            //return lexical_cast<string>(numeric_cast<uno_float>(num.numerator) / numeric_cast<uno_float>(num.denominator));
         case negative:
-            return "-" + lexical_cast<string>(numeric_cast<uno_float>(num.numerator) / numeric_cast<uno_float>(num.denominator));
+            return "-" + rat_to_dec_string(num);
+            //return "-" + lexical_cast<string>(numeric_cast<uno_float>(num.numerator) / numeric_cast<uno_float>(num.denominator));
     }
 }
 
+// default print rat functions. decides to print either fraction or decimal form based on string length
 string print_rat(const rat& num) {
     if (num.numerator > max_int_repr || num.denominator > max_int_repr) return rational_repr_decimal(num);
     return rational_repr_fraction(num);
