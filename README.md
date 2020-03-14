@@ -26,18 +26,18 @@ multiplication, division, and exponentiation.<br>
 UNO, along with the normal ^ exponent operator, comes with shorthands for powers
 and root, as shown below.<br>
 
-<code> 5 ^ 2 # 25 </code><br>
-<code> 5 ** 2 # 5 ^ 2 = 25 </code><br>
-<code> 25 // 2 # 25 ^ (1/2) = 5 </code><br>
+<code> uno > 5 ^ 2 # 25 </code><br>
+<code> uno > 5 ** 2 # 5 ^ 2 = 25 </code><br>
+<code> uno > 25 // 2 # 25 ^ (1/2) = 5 </code><br>
 
 </p>
 <h2> Expressions </h2>
 <p>
 These operations can be combined in an intuitive manner to create arbitrary expressions.<br>
 
-<code> 5 + 5 - 2 # 8 </code><br>
-<code> 2 ** 2 // 2 # 2 </code><br>
-<code> 2 ^ (6.5 - (1.5 * 3)) # 4 </code><br>
+<code> uno > 5 + 5 - 2 # 8 </code><br>
+<code> uno > 2 ** 2 // 2 # 2 </code><br>
+<code> uno > 2 ^ (6.5 - (1.5 * 3)) # 4 </code><br>
 </p>
 
 <h1> Number Representations </h1>
@@ -45,20 +45,20 @@ These operations can be combined in an intuitive manner to create arbitrary expr
 In UNO, numbers can be represented as either fractions, or decimals. The
 <code>dec</code> and <code>frac</code> commands display numbers in a specified manner.
 
-<code> dec 4/5 # 0.8 </code><br>
-<code> frac .8 # 4/5 </code><br>
+<code> uno > dec 4/5 # 0.8 </code><br>
+<code> uno > frac .8 # 4/5 </code><br>
 
 You can also used the ~ operator to represent repeating decimals, as shown below.
 In UNO, this is implemented via geometric series calculations. <br>
 
-<code> dec 1/3 # 0.~3 </code><br>
-<code> frac .~9 # 1, note that .9 repeating is mathematically defined as 1 via the geometric series</code><br>
+<code> uno > dec 1/3 # 0.~3 </code><br>
+<code> uno > frac .~9 # 1, note that .9 repeating is mathematically defined as 1 via the geometric series</code><br>
 <p>
 <h2> Variables </h2>
 <p>
 In UNO, variables are relatively easy to use.<br>
 
-<code> x = 2//2 # define x as sqrt(2)
-y = x ** 4 # y = 4
+<code> uno > x = 2//2 # define x as sqrt(2) <br>
+uno > y = x ** 4 # y = 4
 </code><br>
 </p>
