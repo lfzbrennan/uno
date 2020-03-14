@@ -23,8 +23,8 @@ multiplication, division, and exponentiation.<br>
 <h2> Exponentiation </h2>
 
 <p>
-UNO, along with the normal ^ exponent operator, comes with shorthands for powers
-and root, as shown below.<br>
+UNO, along with the normal <code>^</code> exponent operator, comes with shorthands for powers
+and root, as shown below (<code>`**`</code> and <code>`**`</code>).<br>
 
 <code> uno > 5 ^ 2 # 25 </code><br>
 <code> uno > 5 ** 2 # 5 ^ 2 = 25 </code><br>
