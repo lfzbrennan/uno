@@ -9,36 +9,6 @@
 *   either a) a variable, or b) to stdout.
 */
 
-// stacks for parsing infix expressions
-stack<rat> values;
-stack<char> ops;
-
-// sentinel string value
-string sentinel = SENTINEL;
-
-// global information about possible output variable
-bool has_output;
-string output_name;
-rat output;
-
-// helper variables
-rat cur;
-string number;
-char top;
-
-// possible commands
-string commands[] = {
-    "clear",
-    "history",
-    "show",
-    "exit"
-};
-
-// collection of special characters
-const string special_num = "~.";
-const string operators = "/-+*^";
-const string variable_ok = "_";
-
 // Possible errors. Defaults to nil (no errors)
 enum errors {
     nil,
@@ -58,9 +28,41 @@ errors err;
 char offending_char;
 string offending_string;
 
+// sentinel string value
+string sentinel = SENTINEL;
+
+// global information about possible output variable
+bool has_output;
+string output_name;
+rat output;
+
+// collection of special characters
+const string special_num = "~.";
+const string operators = "/-+*^";
+const string variable_ok = "_";
+
 // pointers to global collections of lambda expressions and variables
 vector<rat>* variable_vec;
 vector<lambda>* lamda_vec;
+
+// stacks for parsing infix expressions
+stack<rat> values;
+stack<char> ops;
+
+// helper variables
+rat cur;
+string number;
+char top;
+
+// possible commands
+string commands[] = {
+    "clear",
+    "history",
+    "show",
+    "exit",
+    "frac",
+    "dec"
+};
 
 // static precedence_map created at start
 struct precedence {
@@ -81,6 +83,138 @@ struct precedence {
 };
 
 map<char,int> precedence::precedence_map = precedence::create_map();
+
+
+// commands
+//============================================================================//
+//============================================================================//
+//============================================================================//
+
+// exists uno
+void __exit(string& arg) {
+    cout << "Goodbye" << endl;
+    exit(0);
+}
+
+// displays history
+void __history() {
+
+}
+
+// displays number as a decimal
+void __dec(string& arg) {
+    if (arg == SENTINEL) {
+        // print most recent output
+        cout << rational_repr_decimal(output) << endl;
+        return;
+    }
+
+    if (arg == "-h" || arg == "--help") {
+        // TODO, SHOW HELP
+    }
+
+    rat num;
+    // is variable
+    if (isalpha(arg[0])) {
+        for (auto it = variable_vec->begin(); it != variable_vec->end(); ++it) {
+            if (it->name == arg) {
+                cout << rational_repr_decimal(*it) << endl;
+                return;
+            }
+        }
+        cout << "unrecognized token " << arg << endl;
+    }
+    // is number, parse
+    else if (isdigit(arg[0]) || arg[0] == '-') {
+
+        // either a fraction, or a number literal
+
+        // must be a fraction
+        if (arg.find('/') != string::npos) {
+            rational_types out_type = positive;
+
+            // check if well formed fraction
+            if (!well_formed_fraction(arg)) {
+                cout << "bad fraction " << arg << endl;
+                return;
+            }
+            int index = arg.find('/');
+            num.numerator = lexical_cast<uno_int>(arg.substr(0, index));
+            num.denominator = lexical_cast<uno_int>(arg.substr(index + 1, arg.size() - index - 1));
+            num.type = out_type;
+
+            cout << rational_repr_decimal(num) << endl;
+        }
+        // else, must be a number literal
+        else {
+            num = parse_number(arg);
+            if (err) {
+                cout << "unrecognized token " << arg << endl;
+                return;
+            }
+            cout << rational_repr_decimal(num) << endl;
+        }
+    } else {
+        cout << "unrecognized token " << arg << endl;
+    }
+}
+
+// displays number as fraction
+void __frac(string& arg) {
+    if (arg == SENTINEL) {
+        // print most recent output
+        cout << rational_repr_fraction(output) << endl;
+        return;
+    }
+
+    if (arg == "-h" || arg == "--help") {
+        // TODO, SHOW HELP
+    }
+
+    rat num;
+    // is variable
+    if (isalpha(arg[0])) {
+        for (auto it = variable_vec->begin(); it != variable_vec->end(); ++it) {
+            if (it->name == arg) {
+                cout << rational_repr_fraction(*it) << endl;
+                return;
+            }
+        }
+        cout << "unrecognized token " << arg << endl;
+    }
+    // is number
+    else if (isdigit(arg[0]) || arg[0] == '-') {
+        // either a fraction, or a number literal
+
+        // must be a fraction
+        if (arg.find('/') != string::npos) {
+            rational_types out_type = positive;
+
+            // check if well formed fraction
+            if (!well_formed_fraction(arg)) {
+                cout << "bad fraction " << arg << endl;
+                return;
+            }
+            int index = arg.find('/');
+            num.numerator = lexical_cast<uno_int>(arg.substr(0, index));
+            num.denominator = lexical_cast<uno_int>(arg.substr(index + 1, arg.size() - index - 1));
+            num.type = out_type;
+
+            cout << rational_repr_fraction(num) << endl;
+        }
+        // else, must be a number literal
+        else {
+            num = parse_number(arg);
+            if (err) {
+                cout << "unrecognized token " << arg << endl;
+                return;
+            }
+            cout << rational_repr_fraction(num) << endl;
+        }
+    } else {
+        cout << "unrecognized token " << arg << endl;
+    }
+}
 
 // process each command accordingly
 void process_command(string& command, vector<string>& args) {
@@ -108,6 +242,10 @@ void process_command(string& command, vector<string>& args) {
     }
 }
 
+
+//============================================================================//
+//============================================================================//
+//============================================================================//
 // Error message function. Sends appropriate error message to stdout, sometimes
 // using offending_char or offending_string
 void error_message() {
@@ -161,6 +299,21 @@ rat operation(rat r1, rat r2, char op) {
         default:
             return rational_multiply(r1, r2);
     }
+}
+
+// checks to make sure the fraction is well formed, if not, sets err and returns false
+// if all is well, err is not set and returns true
+
+bool well_formed_fraction(string& frac) {
+    bool div = false;
+    for (auto&& c : frac) {
+        if (!(isdigit(c) || c == '/')) return false;
+        if (c == '/') {
+            if (div) return false;
+            div = true;
+        }
+    }
+    return true;
 }
 
 // checks to make sure the decimal is well formed, if not, sets err and returns false

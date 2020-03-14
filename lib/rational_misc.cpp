@@ -55,8 +55,59 @@ rat large_float_to_rat(uno_float& num) {
     return out;
 }
 
+// if the denominator is prime factorable by 2 and 5, then it doesnt repeat.
+// if not, then it does repeat
+bool repeating_decimal(uno_int b) {
+    while (!(b % 2)) b /= 2;
+    while (!(b % 5)) b /= 5;
+
+    if (b == 1) return false;
+    else return true;
+}
+
 // rat to string decimal representation
 string rat_to_dec_string(rat& num) {
+    // just an integer
+    if (num.denominator == 1) {
+        return lexical_cast<string>(num.numerator) + ".0";
+    }
+    // it is a repeating decimal
+    else if (repeating_decimal(num.denominator)) {
+        string out;
+        rat temp = num;
+        uno_int a_o = temp.numerator / temp.denominator;
+        temp.numerator -= a_o * temp.denominator;
 
-    return "";
+        out += lexical_cast<string>(a_o) + ".";
+
+        vector<char> sequence;
+        vector<uno_int> remainders;
+        uno_int remainder;
+
+        while (true) {
+            temp.numerator *= 10;
+            char div = (char)(temp.numerator / temp.denominator);
+
+            remainder = (uno_int)div * temp.denominator;
+            temp.numerator -= remainder;
+
+            if (find(remainders.begin(), remainders.end(), remainder) != remainders.end()) {
+                int index = distance(remainders.begin(), find(remainders.begin(), remainders.end(), remainder));
+                for (int i = 0; i < sequence.size(); ++i) {
+                    if (i == index)
+                        out += '~';
+                        
+                    out += sequence[i];
+                }
+                return out;
+            }
+            sequence.push_back(div + '0');
+            remainders.push_back(remainder);
+        }
+        return out;
+    }
+    // it is a terminating decimal
+    else {
+        return lexical_cast<string>(numeric_cast<uno_float>(num.numerator) / numeric_cast<uno_float>(num.denominator));
+    }
 }

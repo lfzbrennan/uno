@@ -6,8 +6,6 @@
 #include "../lib/rational_misc.hpp"
 #include "../lib/rational_repr.hpp"
 
-#include "commands.hpp"
-
 #include <stack>
 #include <map>
 #include <regex>
@@ -23,6 +21,21 @@ using boost::multiprecision::uint128_t;
 #define SPECIAL_POW_CHAR 1
 #define SPECIAL_ROOT_CHAR 2
 
+
+//commands
+//======================================//
+//======================================//
+//======================================//
+void __clear();
+void __history();
+void __show();
+void __exit(std::string& arg);
+void __dec(std::string& arg);
+void __frac(std::string& arg);
+//======================================//
+//======================================//
+//======================================//
+
 vector<string> split(string l);
 
 string replace(string str, const string& from, const string& to);
@@ -31,7 +44,10 @@ rat operation(rat r1, rat r2, char op);
 rat eval_lambda(const lambda& l, vector<string>& params);
 rat dec_to_rat(string& num);
 rat parse_number(string& num);
+rat parse_fraction(string& num);
 
+bool well_formed_decimal(string& dec);
+bool well_formed_fraction(string& frac);
 bool get_assignment(string& line);
 bool allowable_variable_name(string variable);
 bool validate_lambda(vector<string>& parameters, string expression);

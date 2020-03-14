@@ -39,7 +39,7 @@ string rational_repr_decimal(rat& num) {
 }
 
 // default print rat functions. decides to print either fraction or decimal form based on string length
-string print_rat(const rat& num) {
+string print_rat(rat& num) {
     if (num.numerator > max_int_repr || num.denominator > max_int_repr) return rational_repr_decimal(num);
     return rational_repr_fraction(num);
 }
