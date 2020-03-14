@@ -58,7 +58,6 @@ In UNO, this is implemented via geometric series calculations. <br>
 <p>
 In UNO, variables are relatively easy to use.<br>
 
-<code> uno > x = 2//2 # define x as sqrt(2) <br>
-uno > y = x ** 4 # y = 4
-</code><br>
+<code> uno > x = 2//2 # define x as sqrt(2)</code><br>
+<code> uno > y = x ** 4 # y = 4 </code><br>
 </p>
