@@ -935,6 +935,8 @@ else -> we expect it to be some sort of expression eval
 */
 
 void controller(string line, vector<rat>& rational_vec, vector<lambda>& l_vec) {
+    cout << fixed << setprecision(numeric_limits<uno_float>::digits10);
+
     // reset error variables
     err = nil;
     offending_char = ' ';

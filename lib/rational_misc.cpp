@@ -25,7 +25,12 @@ uno_float rat_to_large_float(rat& num) {
 rat large_float_to_rat(uno_float& num) {
     rat out;
     rat cur;
-    string s_num = lexical_cast<string>(num);
+
+    ostringstream ss;
+    ss << fixed << setprecision(numeric_limits<uno_float>::digits10);
+    ss << num;
+    string s_num = ss.str();
+
     int dec = s_num.find('.');
 
     // not a decimal, can just be cast as an int
@@ -41,12 +46,25 @@ rat large_float_to_rat(uno_float& num) {
         if (i == dec || s_num[i] == '0') continue;
         cur.type = positive;
         if (dec > i) {
-            cur.numerator = uno_int((int)s_num[i] - '0')
-                * boost::multiprecision::pow(uno_int(10), dec - i - 1);
+            uno_int offset = 1;
+            int j = 0;
+            while (j < (dec - i - 1)) {
+                offset *= 10;
+                j++;
+            }
+
+            cur.numerator = uno_int((int)s_num[i] - '0') * offset;
             cur.denominator = 1;
         } else {
+            uno_int offset = 1;
+            int j = 0;
+            while (j < (i - dec)) {
+                offset *= 10;
+                j++;
+            }
+
             cur.numerator = ((int)s_num[i] - '0');
-            cur.denominator = boost::multiprecision::pow(uno_int(10), i - dec);
+            cur.denominator = offset;
         }
         out = rational_addition(out, cur);
     }
@@ -91,12 +109,12 @@ string rat_to_dec_string(rat& num) {
             remainder = (uno_int)div * temp.denominator;
             temp.numerator -= remainder;
 
-            if (find(remainders.begin(), remainders.end(), remainder) != remainders.end()) {
+            if (remainder && find(remainders.begin(), remainders.end(), remainder) != remainders.end()) {
                 int index = distance(remainders.begin(), find(remainders.begin(), remainders.end(), remainder));
                 for (int i = 0; i < sequence.size(); ++i) {
                     if (i == index)
                         out += '~';
-                        
+
                     out += sequence[i];
                 }
                 return out;
@@ -108,6 +126,9 @@ string rat_to_dec_string(rat& num) {
     }
     // it is a terminating decimal
     else {
-        return lexical_cast<string>(numeric_cast<uno_float>(num.numerator) / numeric_cast<uno_float>(num.denominator));
+        ostringstream ss;
+        ss << fixed << setprecision(numeric_limits<uno_float>::digits10);
+        ss << numeric_cast<uno_float>(num.numerator) / numeric_cast<uno_float>(num.denominator);
+        return ss.str();
     }
 }

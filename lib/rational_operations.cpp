@@ -183,7 +183,8 @@ rat rational_exponent(rat r1, rat r2) {
             return out;
         }
         uno_float estimation = rat_to_large_float(out);
-        uno_float root = boost::multiprecision::pow(estimation, 1.0 / numeric_cast<double>(r2.denominator));
+        uno_float root = boost::multiprecision::pow(estimation, 1.0 / numeric_cast<uno_float>(r2.denominator));
+
         out = large_float_to_rat(root);
         out.type = positive;
         simplify(out);

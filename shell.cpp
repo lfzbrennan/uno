@@ -17,6 +17,9 @@ vector<string> comma_split(string l) {
 }
 
 int main(int argc, char** argv) {
+
+    cout << fixed << setprecision(numeric_limits<uno_float>::digits10);
+
     system("cat ./banner.d");
 
     string line;

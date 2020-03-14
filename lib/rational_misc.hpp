@@ -4,6 +4,8 @@
 #include "number.hpp"
 #include "rational_operations.hpp"
 
+#include <sstream>
+
 #include <boost/multiprecision/cpp_dec_float.hpp>
 using boost::multiprecision::cpp_dec_float;
 using boost::lexical_cast;
