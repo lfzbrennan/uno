@@ -107,8 +107,8 @@ UNO comes with some helpful commands.<br>
 <code>frac [rat]</code> Displays number token as a fraction.<br>
 
 <h1> Download and Requirements </h1>
-UNO can be downloaded with a simple<br><code>git clone https://github.com/lfzbrennan/uno.git</code><br>
-Followed by a<br><code>make</code> to create the uno executable. <br>
+UNO can be downloaded with a simple <code>git clone https://github.com/lfzbrennan/uno.git</code>
+Followed by a <code>make</code> to create the uno executable.<br>
 
 In order to compile, the boost c++ library must be downloaded, and $BOOST_PATH
 must be set. At this time, UNO can only be downloaded on *NIX systems.
