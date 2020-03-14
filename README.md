@@ -77,9 +77,9 @@ The lambda can then be evaluated using arbitrary values.<br>
 Lambda bodies can also be used in place in expressions, as represented by the
 example code below.
 
-<code> sqrt a := a//2</code><br>
-<code> x = 25</code><br>
-<code> y = (sqrt x) ** 3 # set variable y to be 125</code><br>
+<code> uno > sqrt a := a//2</code><br>
+<code> uno > x = 25</code><br>
+<code> uno > y = (sqrt x) ** 3 # set variable y to be 125</code><br>
 </p>
 
 <h1> Functions </h1>
@@ -93,9 +93,9 @@ UNO brings along some predefined constants, such as <code>pi</code> and <code>e<
 These constants cannot be redefined.<br>
 
 
-<code> c_area r := pi * (r**2)</code><br>
-<code> c_area 5 # 78.53...</code><br>
-<code> pi = 5 # error, uno defined constants cannot be redefined </code><br>
+<code> uno > c_area r := pi * (r**2)</code><br>
+<code> uno > c_area 5 # 78.53...</code><br>
+<code> uno > pi = 5 # error, uno defined constants cannot be redefined </code><br>
 
 <h2> Helpful Commands </h2>
 UNO comes with some helpful commands.<br>
