@@ -24,7 +24,7 @@ multiplication, division, and exponentiation.<br>
 
 <p>
 UNO, along with the normal <code>^</code> exponent operator, comes with shorthands for powers
-and root, as shown below (<code>`**`</code> and <code>`**`</code>).<br>
+and root, as shown below (<code>**</code> and <code>//</code>).<br>
 
 <code> uno > 5 ^ 2 # 25 </code><br>
 <code> uno > 5 ** 2 # 5 ^ 2 = 25 </code><br>
