@@ -2,7 +2,7 @@
 <p>
 UNO is the byproduct of a bored CS and Math student on break. The goal of UNO is
 to create a sandbox as mathematically precise as possible in an intuitive manner.
-There is one type in uno, Rational Number, which allows for well defined operations.
+There is one type in uno, Rational Number (rat), which allows for well defined operations.
 UNO uses the c++ boost library to provide up to 1024 bit integer precision, as
 well as 100 digit float precision. UNO also has some additional features that
 make it useful and intuitive.
@@ -61,3 +61,54 @@ In UNO, variables are relatively easy to use.<br>
 <code> uno > x = 2//2 # define x as sqrt(2)</code><br>
 <code> uno > y = x ** 4 # y = 4 </code><br>
 </p>
+
+<h1> Lambda Expressions/Formulas </h1>
+<p>
+In UNO, lambda expressions can be created quickly and intuitively. A lambda expression
+is denoted by the <code>:=</code> identifier. The first token is the lambda name,
+the rest are parameter names, and the right of the <code>:=</code> token is the
+body.
+
+<code> pythag_theorem a b := (a**2 + b**2)//2</code><br>
+In this example, the lambda name is pythag_theorem, and the parameters are a and b.
+The lambda can then be evaluated using arbitrary values.<br>
+
+<code> pythag_theorem 3 4 # 5</code><br>
+Lambda bodies can also be used in place in expressions, as represented by the
+example code below.
+
+<code> sqrt a := a//2</code><br>
+<code> x = 25</code><br>
+<code> y = (sqrt x) ** 3 # set variable y to be 125</code><br>
+</p>
+
+<h1> Functions </h1>
+<i>To be added soon </i>
+
+<h1> Miscellaneous </h1>
+
+<h2> UNO defined constants </h2>
+
+UNO brings along some predefined constants, such as <code>pi</code> and <code>e</code>
+These constants cannot be redefined.<br>
+
+
+<code> c_area r := pi * (r**2)</code><br>
+<code> c_area 5 # 78.53...</code><br>
+<code> pi = 5 # error, uno defined constants cannot be redefined </code><br>
+
+<h2> Helpful Commands </h2>
+UNO comes with some helpful commands.<br>
+
+<code>show</code> Shows list of current variables and lambda expressions.<br>
+<code>clear</code> Clears all current variables and lambda expressions.<br>
+<code>history</code> Displays UNO command history<br>
+<code>dec [rat]</code> Displays number token as a decimal.<br>
+<code>frac [rat]</code> Displays number token as a fraction.<br>
+
+<h1> Download and Requirements </h1>
+UNO can be downloaded with a simple<br><code>git clone https://github.com/lfzbrennan/uno.git</code><br>
+Followed by a<br><code>make</code> to create the uno executable. <br>
+
+In order to compile, the boost c++ library must be downloaded, and $BOOST_PATH
+must be set. At this time, UNO can only be downloaded on *NIX systems.
