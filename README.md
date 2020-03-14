@@ -69,7 +69,7 @@ is denoted by the <code>:=</code> identifier. The first token is the lambda name
 the rest are parameter names, and the right of the <code>:=</code> token is the
 body.
 
-<code> pythag_theorem a b := (a**2 + b**2)//2</code><br>
+<code> pythag_theorem a b := (a ** 2 + b ** 2)//2</code><br>
 In this example, the lambda name is pythag_theorem, and the parameters are a and b.
 The lambda can then be evaluated using arbitrary values.<br>
 
