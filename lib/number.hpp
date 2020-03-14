@@ -30,14 +30,23 @@ typedef struct {
     uno_int denominator;
 } rational_number;
 
+// shorthand -> writing rational_number is a pain
+typedef rational_number rat;
+
 // lambda "object"
 typedef struct {
     std::string name;
+    // change to string* parameters
     std::vector<std::string> parameters;
     std::string expression;
 } lambda;
 
-// shorthand -> writing rational_number is a pain
-typedef rational_number rat;
+// function
+typedef struct {
+    std::string name;
+    rat* parameters;
+    rat (*fcnPtr)(rat*){};
+} function;
+
 
 #endif

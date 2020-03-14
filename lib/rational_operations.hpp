@@ -4,6 +4,8 @@
 #include "number.hpp"
 #include "rational_misc.hpp"
 
+#include <boost/math/special_functions/round.hpp>
+
 using namespace std;
 
 rat rational_multiply(rat r1, rat r2);

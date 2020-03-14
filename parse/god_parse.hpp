@@ -9,6 +9,7 @@
 #include <stack>
 #include <map>
 #include <regex>
+#include <iomanip>
 
 using namespace std;
 using boost::lexical_cast;
@@ -26,9 +27,9 @@ using boost::multiprecision::uint128_t;
 //======================================//
 //======================================//
 //======================================//
-void __clear();
-void __history();
-void __show();
+void __clear(std::string& arg);
+void __history(std::string& arg);
+void __show(std::string& arg);
 void __exit(std::string& arg);
 void __dec(std::string& arg);
 void __frac(std::string& arg);
@@ -60,6 +61,6 @@ void process_command(string& command);
 void infix_parse(string& line);
 void process_operator(char front);
 void make_output();
-void controller(string line, vector<rat>& rational_vec, vector<lambda>& l_vec);
+void controller(string line);
 
 #endif

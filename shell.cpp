@@ -2,9 +2,6 @@
 
 using namespace std;
 
-vector<rational_number> rational_vec;
-vector<lambda> lambda_vec;
-
 vector<string> comma_split(string l) {
    vector<string> tokens;
    string token;
@@ -31,7 +28,7 @@ int main(int argc, char** argv) {
         tokens = comma_split(line);
 
         for (vector<string>::iterator it = tokens.begin(); it != tokens.end(); ++it) {
-            controller(*it, rational_vec, lambda_vec);
+            controller(*it);
         }
     }
 }

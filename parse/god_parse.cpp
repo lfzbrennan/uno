@@ -9,6 +9,35 @@
 *   either a) a variable, or b) to stdout.
 */
 
+// uno defined constants
+//================================================================//
+//================================================================//
+//================================================================//
+
+rat pi = {
+    .name = "pi",
+    .type = positive,
+    .numerator = lexical_cast<uno_int>("785398163397448309615660845819875721049292349843776455243736148076954101571552249657008706335529267"),
+    .denominator = lexical_cast<uno_int>("250000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")
+};
+
+rat e = {
+    .name = "e",
+    .type = positive,
+    .numerator = lexical_cast<uno_int>("13591409142295226176801437356763312488786235468499797874834838138620383151767737972856910892625832137"),
+    .denominator = lexical_cast<uno_int>("5000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+};
+
+// uno defined constants
+rat* constant_variables[] = {
+    &pi,
+    &e,
+};
+
+//================================================================//
+//================================================================//
+//================================================================//
+
 // Possible errors. Defaults to nil (no errors)
 enum errors {
     nil,
@@ -20,8 +49,12 @@ enum errors {
     poor_parameter_name,
     unused_parameter,
     poor_lambda_evaluation,
-    imaginary_exponent
+    imaginary_exponent,
+    cannot_be_redefined
 };
+
+// command history
+vector<string> command_history;
 
 // global error information
 errors err;
@@ -42,8 +75,8 @@ const string operators = "/-+*^";
 const string variable_ok = "_";
 
 // pointers to global collections of lambda expressions and variables
-vector<rat>* variable_vec;
-vector<lambda>* lamda_vec;
+vector<rat> variable_vec;
+vector<lambda> lambda_vec;
 
 // stacks for parsing infix expressions
 stack<rat> values;
@@ -90,15 +123,115 @@ map<char,int> precedence::precedence_map = precedence::create_map();
 //============================================================================//
 //============================================================================//
 
-// exists uno
+// helper function for displaying a formatted table
+
+template<typename T> size_t display_row(T t, const int& width) {
+    stringstream s;
+    s << left << setw(width) << setfill(' ') << t;
+    string out = s.str();
+    cout << out;
+    return out.size();
+}
+
+// shows all current variables and lambda expressions
+
+void __show(string& arg) {
+    if (arg == "-h" || arg == "--help") {
+        cout << "Shows all user variables and lambdas" << endl;
+        cout << "\tUsage: show [-h | --help]" << endl;
+        return;
+    }
+    size_t width = 20;
+    size_t total = 0;
+
+    // display all variables, if variables exist
+    if (!variable_vec.empty()) {
+        cout << endl;
+        total += display_row("Variable Name", width);
+        total += display_row("Value", width);
+        cout << endl;
+
+        total -= width - string("Value").size();
+
+        for (int i = 0; i < total; ++i)
+            cout << '-';
+
+        cout << endl;
+
+        for (auto&& v : variable_vec) {
+            display_row(v.name, width);
+            string out = rational_repr_decimal(v);
+            if (out.size() > width) {
+                out.substr(0, width - 4);
+                out += "...";
+            }
+            display_row(out, width);
+            cout << endl;
+        }
+        cout << endl;
+    }
+
+    // display all lambdas, if lambdas exist
+    if (!lambda_vec.empty()) {
+
+        total = 0;
+        total += display_row("Lambda Name", width);
+        total += display_row("Expression", width);
+        cout << endl;
+
+        total -= width - string("Expression").size();
+
+        for (int i = 0; i < total; ++i)
+            cout << '-';
+
+        cout << endl;
+
+        for (auto&& l : lambda_vec) {
+            display_row(l.name, width);
+            string out = l.expression;
+            if (out.size() > width) {
+                out.substr(0, width - 4);
+                out += "...";
+            }
+            display_row(out, width);
+            cout << endl;
+        }
+        cout << endl;
+    }
+}
+
+// clears all user variables and lambdas
+void __clear(string& arg) {
+    if (arg == "-h" || arg == "--help") {
+        cout << "Clears all user variables and lambdas" << endl;
+        cout << "\tUsage: clear [-h | --help]" << endl;
+        return;
+    }
+
+    variable_vec.clear();
+    lambda_vec.clear();
+}
+
+// exits uno
 void __exit(string& arg) {
+    if (arg == "-h" || arg == "--help") {
+        cout << "Exits uno" << endl;
+        cout << "\tUsage: exit [-h | --help]" << endl;
+    }
     cout << "Goodbye" << endl;
     exit(0);
 }
 
 // displays history
-void __history() {
-
+void __history(string& arg) {
+    if (arg == "-h" || arg == "--help") {
+        cout << "Displays command history" << endl;
+        cout << "\tUsage: history [-h | --help]" << endl;
+        return;
+    }
+    for (int i = 0; i < command_history.size(); ++i) {
+        cout << i + 1 << ". " << command_history[i] << endl;
+    }
 }
 
 // displays number as a decimal
@@ -110,13 +243,15 @@ void __dec(string& arg) {
     }
 
     if (arg == "-h" || arg == "--help") {
-        // TODO, SHOW HELP
+        cout << "Displays decimal form of rational number." << endl;
+        cout << "\tUsage: dec [-h | --help] [rat]" << endl;
+        return;
     }
 
     rat num;
     // is variable
     if (isalpha(arg[0])) {
-        for (auto it = variable_vec->begin(); it != variable_vec->end(); ++it) {
+        for (auto it = variable_vec.begin(); it != variable_vec.end(); ++it) {
             if (it->name == arg) {
                 cout << rational_repr_decimal(*it) << endl;
                 return;
@@ -168,13 +303,15 @@ void __frac(string& arg) {
     }
 
     if (arg == "-h" || arg == "--help") {
-        // TODO, SHOW HELP
+        cout << "Displays fractional form of rational number." << endl;
+        cout << "\tUsage: frac [-h | --help] [rat]" << endl;
+        return;
     }
 
     rat num;
     // is variable
     if (isalpha(arg[0])) {
-        for (auto it = variable_vec->begin(); it != variable_vec->end(); ++it) {
+        for (auto it = variable_vec.begin(); it != variable_vec.end(); ++it) {
             if (it->name == arg) {
                 cout << rational_repr_fraction(*it) << endl;
                 return;
@@ -219,11 +356,20 @@ void __frac(string& arg) {
 // process each command accordingly
 void process_command(string& command, vector<string>& args) {
     if (command == "clear") {
+        if (args.size() == 1)
+            __clear(sentinel);
 
+        else __clear(args[1]);
     } else if (command == "show") {
+        if (args.size() == 1)
+            __show(sentinel);
 
+        else __show(args[1]);
     } else if (command == "history") {
+        if (args.size() == 1)
+            __history(sentinel);
 
+        else __history(args[1]);
     } else if (command == "exit") {
         if (args.size() == 1)
             __exit(sentinel);
@@ -251,31 +397,34 @@ void process_command(string& command, vector<string>& args) {
 void error_message() {
     switch (err) {
         case bad_expression_character:
-            cout << "bad character " << offending_char << endl;
+            cout << "UNO Error: bad character " << offending_char << endl;
             break;
         case bad_expression_formulation:
-            cout << "poor expression formulation with term " << offending_char << endl;
+            cout << "UNO Error: poor expression formulation with term " << offending_char << endl;
             break;
         case undfined_variable:
-            cout << "undefined variable " << offending_string << endl;
+            cout << "UNO Error: undefined variable " << offending_string << endl;
             break;
         case no_lambda_parameters:
-            cout << "lambda must have at least one parameter" << endl;
+            cout << "UNO Error: lambda must have at least one parameter" << endl;
             break;
         case poor_variable_name:
-            cout << "poor variable name " << offending_string << endl;
+            cout << "UNO Error: poor variable name " << offending_string << endl;
             break;
         case poor_parameter_name:
-            cout << "poor parameter name " << offending_string << endl;
+            cout << "UNO Error: poor parameter name " << offending_string << endl;
             break;
         case unused_parameter:
-            cout << "unused_parameter " << offending_string << endl;
+            cout << "UNO Error: unused_parameter " << offending_string << endl;
             break;
         case poor_lambda_evaluation:
-            cout << "poor lambda evaluation with lamda: " << offending_string << endl;
+            cout << "UNO Error: poor lambda evaluation with lambda: " << offending_string << endl;
+            break;
+        case cannot_be_redefined:
+            cout << "UNO Error: value " << offending_string << " cannot be redefined" << endl;
             break;
         default:
-            cout << "Something went wrong" << endl;
+            cout << "UNO Error: something went wrong" << endl;
     }
 }
 
@@ -544,16 +693,7 @@ void infix_parse(string& line) {
 
         // if char starts with an alpha, then assume its a variable or lambda
         else if (isalpha(*it)) {
-            // if no variables or LAMBDAS, error
-            if (variable_vec->empty() && lamda_vec->empty()) {
-                err = undfined_variable;
-                while (it != line.cend() && good_variable_character(*it)){
-                    number += *it;
-                    it++;
-                }
-                offending_string = number;
-                return;
-            }
+
             // get full variable name
             number += *it;
             while ((it+1) <= line.cend() && good_variable_character(*(it+1))) {
@@ -563,18 +703,28 @@ void infix_parse(string& line) {
 
             bool good = false;
             // check to see if that variable exists
-            for (auto i = variable_vec->begin(); i != variable_vec->end(); ++i) {
-                if (i->name == number) {
-                    values.push(*i);
+            for (auto&& i : variable_vec) {
+                if (i.name == number) {
+                    values.push(i);
                     good = true;
                     break;
+                }
+            }
+            // check to see if that uno defined variable exists
+            if (!good) {
+                for (rat* &r : constant_variables) {
+                    if (r->name == number) {
+                        values.push(*r);
+                        good = true;
+                        break;
+                    }
                 }
             }
             // variable processed, continue
             if (good) continue;
 
             // variable not found, must be lambda
-            for (auto i = lamda_vec->begin(); i != lamda_vec->end(); ++i) {
+            for (auto i = lambda_vec.begin(); i != lambda_vec.end(); ++i) {
                 if (i->name == number) {
                     // we found a lambda, now eval
                     it++;
@@ -640,19 +790,35 @@ void infix_parse(string& line) {
                             it++;
                             number += *it;
                         }
-                        for (auto i = variable_vec->begin(); i < variable_vec->end(); ++i) {
+                        // check to see if user defined variable
+                        bool good = false;
+                        for (auto i = variable_vec.begin(); i < variable_vec.end(); ++i) {
                             if (i->name == number) {
                                 rat temp = *i;
                                 if (temp.type == negative) temp.type = positive;
                                 else if (temp.type == positive) temp.type = negative;
                                 values.push(temp);
+                                good = true;
                                 break;
                             }
-                            if ((i+1) == variable_vec->end()) {
-                                err = undfined_variable;
-                                offending_string = number;
-                                return;
+                        }
+
+                        // check to see if uno defined variable
+                        for (rat* &r : constant_variables) {
+                            if (r->name == number) {
+                                rat temp = *r;
+                                if (temp.type == negative) temp.type = positive;
+                                else if (temp.type == positive) temp.type = negative;
+                                values.push(temp);
+                                good = true;
+                                break;
                             }
+                        }
+
+                        if (!good) {
+                            err = undfined_variable;
+                            offending_string = number;
+                            return;
                         }
                     }
                     // must be a number literal
@@ -757,10 +923,44 @@ bool get_assignment(string& line) {
 
 // after parsing, print output as needed
 void make_output() {
+    // set ans variable
+    bool done = false;
+    for (auto&& it : variable_vec) {
+        if (it.name == "ans") {
+            it.type = output.type;
+            it.numerator = output.numerator;
+            it.denominator = output.denominator;
+            done = true;
+            break;
+        }
+    }
+    if (!done) {
+        rat temp;
+        temp.name = "ans";
+        temp.numerator = output.numerator;
+        temp.denominator = output.denominator;
+        temp.type = output.type;
+        variable_vec.push_back(temp);
+    }
 
     // if output redirected to a variable
     if (has_output) {
-        for (auto&& it : *variable_vec) {
+        // cannot redefine ans variable
+        if (output_name == "ans") {
+            err = cannot_be_redefined;
+            offending_string = output_name;
+            return;
+        }
+        // cannot redefine uno defined constant
+        for (rat* &r : constant_variables) {
+            if (r->name == output_name) {
+                err = cannot_be_redefined;
+                offending_string = output_name;
+                return;
+            }
+        }
+        // if variable already exists, update
+        for (auto&& it : variable_vec) {
             if (it.name == output_name) {
                 it.type = output.type;
                 it.numerator = output.numerator;
@@ -768,8 +968,9 @@ void make_output() {
                 return;
             }
         }
+        // otherwise, create new variable
         output.name = output_name;
-        variable_vec->push_back(output);
+        variable_vec.push_back(output);
     }
     // if not, direct to stdout
     else {
@@ -847,10 +1048,20 @@ bool validate_lambda_parameters(vector<string>& params) {
         // if not, its a variable
         else if (isalpha(p[0])) {
             bool good = false;
-            for (auto i = variable_vec->begin(); i != variable_vec->end(); i++) {
+            // user defined variable
+            for (auto i = variable_vec.begin(); i != variable_vec.end(); i++) {
                 if (i->name == p) {
                     good = true;
                     break;
+                }
+            }
+            // uno defined variable
+            if (!good) {
+                for (rat* &r : constant_variables) {
+                    if (r->name == p) {
+                        good = true;
+                        break;
+                    }
                 }
             }
             return good;
@@ -918,7 +1129,7 @@ void create_lambda(string& line) {
         l.expression = expression;
         l.parameters = parameters;
 
-        lamda_vec->push_back(l);
+        lambda_vec.push_back(l);
     }
 }
 
@@ -934,7 +1145,8 @@ else -> we expect it to be some sort of expression eval
 2. evaluate expression
 */
 
-void controller(string line, vector<rat>& rational_vec, vector<lambda>& l_vec) {
+void controller(string line) {
+    command_history.push_back(line);
     cout << fixed << setprecision(numeric_limits<uno_float>::digits10);
 
     // reset error variables
@@ -942,14 +1154,14 @@ void controller(string line, vector<rat>& rational_vec, vector<lambda>& l_vec) {
     offending_char = ' ';
     offending_string = " ";
 
-    // if it is a command, process accordingly
-    string command = "";
-
     // trim the fat
     int i = 0;
     while (line[i] == ' ')
         i++;
     if (i) line = line.substr(i, string::npos);
+
+    // if it is a command, process accordingly
+    string command = "";
 
     // get first word, see if it is a command
     for (string::const_iterator it = line.cbegin(); (*it != ' ') && (it != line.cend()); ++it)
@@ -964,9 +1176,7 @@ void controller(string line, vector<rat>& rational_vec, vector<lambda>& l_vec) {
         return;
     }
 
-    // if not command, check if it is a lambda expression (and set lamda and rat vectors)
-    lamda_vec = &l_vec;
-    variable_vec = &rational_vec;
+    // if not command, check if it is a lambda expression (and set lambda and rat vectors)
 
     if (line.find(":=") != string::npos) {
         // has lambda operator, must be a lambda or a broken command
@@ -993,4 +1203,8 @@ void controller(string line, vector<rat>& rational_vec, vector<lambda>& l_vec) {
 
     // make the output -> either set to stdout, or to a variable name
     make_output();
+    if (err) {
+        error_message();
+        return;
+    }
 }

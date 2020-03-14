@@ -1,5 +1,7 @@
 #include "rational_operations.hpp"
 
+uno_float eq_distance = lexical_cast<uno_float>(".0000000000000001");
+
 // multiply 2 rats
 rat rational_multiply(rat r1, rat r2) {
     rat out;
@@ -185,9 +187,20 @@ rat rational_exponent(rat r1, rat r2) {
         uno_float estimation = rat_to_large_float(out);
         uno_float root = boost::multiprecision::pow(estimation, 1.0 / numeric_cast<uno_float>(r2.denominator));
 
+        // make sure that it isnt an actual integer root
+        if (abs(root - boost::math::round(root)) < eq_distance) {
+            root = boost::math::round(root);
+        }
+
         out = large_float_to_rat(root);
         out.type = positive;
         simplify(out);
+    } else {
+        uno_float root = rat_to_large_float(out);
+        if (abs(root - boost::math::round(root)) < eq_distance) {
+            out.numerator = uno_int(boost::math::round(root));
+            out.denominator = 1;
+        }
     }
     return out;
 }
