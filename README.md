@@ -24,11 +24,11 @@ multiplication, division, and exponentiation.<br>
 
 <p>
 UNO, along with the normal <code>^</code> exponent operator, comes with shorthands for powers
-and root, as shown below (<code>**</code> and <code>//</code>).<br>
+and roots, as shown below (<code>**</code> and <code>//</code>).<br>
 
 <code> uno > 5 ^ 2 # 25 </code><br>
-<code> uno > 5 ** 2 # 5 ^ 2 = 25 </code><br>
-<code> uno > 25 // 2 # 25 ^ (1/2) = 5 </code><br>
+<code> uno > 5 ** 2 # aka, 5 ^ 2 = 25 </code><br>
+<code> uno > 25 // 2 # aka, 25 ^ (1/2) = 5 </code><br>
 
 </p>
 <h2> Expressions </h2>

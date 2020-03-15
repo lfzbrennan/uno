@@ -2,6 +2,8 @@
 
 using namespace std;
 
+size_t max_before_scientific = 10;
+
 // simplify rational number
 void simplify(rat& num) {
     uno_int gcd = boost::integer::gcd(num.denominator, num.numerator);
@@ -102,6 +104,9 @@ string rat_to_dec_string(rat& num) {
         vector<uno_int> remainders;
         uno_int remainder;
 
+        size_t zero_count = 0;
+        bool zero_stop = false;
+
         while (true) {
             temp.numerator *= 10;
             char div = (char)(temp.numerator / temp.denominator);
@@ -110,14 +115,25 @@ string rat_to_dec_string(rat& num) {
             temp.numerator -= remainder;
 
             if (remainder && find(remainders.begin(), remainders.end(), remainder) != remainders.end()) {
+                if (!zero_stop) zero_stop = true;
                 int index = distance(remainders.begin(), find(remainders.begin(), remainders.end(), remainder));
                 for (int i = 0; i < sequence.size(); ++i) {
                     if (i == index)
                         out += '~';
 
                     out += sequence[i];
+                } if (!a_o && zero_count > max_before_scientific) {
+                    size_t tilda = out.find('~');
+                    string temp = out;
+                    out = temp.substr(zero_count + 2, tilda);
+                    out += '.';
+                    out += temp.substr(tilda, string::npos);
+                    out += "e-" + to_string(zero_count);
                 }
+
                 return out;
+            } else {
+                if (!zero_stop) zero_count++;
             }
             sequence.push_back(div + '0');
             remainders.push_back(remainder);

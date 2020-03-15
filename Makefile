@@ -8,7 +8,4 @@ all:
 
 clean:
 	rm *.o
-	rm a.out uno
-
-test:
-	clang++ test.cpp && ./a.out
+	rm uno
